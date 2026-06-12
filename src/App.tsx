@@ -5,6 +5,7 @@ import { sincronizar, pendentes } from "./lib/db";
 import Entrar from "./pages/Entrar";
 import CriarCampanha from "./pages/CriarCampanha";
 import Convite from "./pages/Convite";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import Inicio from "./pages/Inicio";
 import Contatos from "./pages/Contatos";
 import NovoContato from "./pages/NovoContato";
@@ -117,6 +118,7 @@ export default function App() {
         <Route path="/entrar" element={perfil ? <Navigate to="/" /> : <Entrar />} />
         <Route path="/criar" element={perfil ? <Navigate to="/" /> : <CriarCampanha />} />
         <Route path="/convite/:token" element={<Convite />} />
+        <Route path="/redefinir" element={<RedefinirSenha />} />
         <Route path="/" element={perfil ? <Shell perfil={perfil} sair={sair} /> : <Navigate to="/entrar" />} />
       </Routes>
     </BrowserRouter>
