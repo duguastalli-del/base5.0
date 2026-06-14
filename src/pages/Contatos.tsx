@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
 import { linkWa, mascaraCelular } from "../lib/format";
-import { Search, ChevronRight, MessageCircle, Tag, CheckCircle2, AlertTriangle, X, Building2 } from "lucide-react";
+import ModalImportar from "../components/ModalImportar";
+import { Search, ChevronRight, MessageCircle, Tag, CheckCircle2, AlertTriangle, X, Building2, Smartphone } from "lucide-react";
 
 interface Contato {
   id: string; nome: string; celular_e164: string; cidade: string;
@@ -9,12 +10,15 @@ interface Contato {
   consent: "sim" | "pendente" | "recusou"; criado_em: string;
 }
 
-export default function Contatos({ perfil: _perfil }: { perfil: Perfil }) {
+export default function Contatos({ perfil }: { perfil: Perfil }) {
   const [contatos, setContatos] = useState<Contato[]>([]);
   const [busca, setBusca] = useState("");
   const [cidadeF, setCidadeF] = useState("");
   const [aberto, setAberto] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [importar, setImportar] = useState(false);
+
+  const podeImportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
 
   const carregar = async () => {
     setCarregando(true);
@@ -35,6 +39,17 @@ export default function Contatos({ perfil: _perfil }: { perfil: Perfil }) {
 
   return (
     <div className="space-y-3 pb-4">
+      <button onClick={() => podeImportar && setImportar(true)} disabled={!podeImportar}
+        title={podeImportar ? "" : "Apenas administrador e coordenador podem importar"}
+        className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 text-white bg-marca disabled:opacity-50 disabled:cursor-not-allowed">
+        <Smartphone size={16} /> + Importar contatos
+      </button>
+
+      {importar && (
+        <ModalImportar perfil={perfil} cidades={cidades}
+          onClose={() => setImportar(false)} onImportado={carregar} />
+      )}
+
       <div className="flex items-center gap-2 rounded-xl px-3 bg-white border border-linha">
         <Search size={15} className="text-apoio" />
         <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome ou celular"
