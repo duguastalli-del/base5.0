@@ -5,7 +5,7 @@ import Templates from "./Templates";
 import { AlertTriangle, Send, MessageCircle, CheckCircle2, Loader2, Building2, Tag, Settings } from "lucide-react";
 
 interface Template {
-  id: string; nome: string; corpo: string;
+  id: string; nome: string; texto: string;
   tipo: "normal" | "optin";
   media_url: string | null; media_type: "image" | "video" | null;
 }
@@ -141,7 +141,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
   const enviar = async (contato: ContatoFila) => {
     if (!templateAtual) return;
     setEnviandoId(contato.id);
-    const msg = personalizar(templateAtual.corpo, contato);
+    const msg = personalizar(templateAtual.texto, contato);
     let abrirWa = true;
 
     if (templateAtual.media_url) {
@@ -235,7 +235,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-apoio">{personalizar(t.corpo, { nome: "João", bairro: "Centro", cidade: "SBO" } as ContatoFila)}</p>
+                <p className="mt-1 text-apoio">{personalizar(t.texto, { nome: "João", bairro: "Centro", cidade: "SBO" } as ContatoFila)}</p>
               </button>
             ))}
             {templates.filter((t) => t.tipo === "normal").length === 0 && (
@@ -250,7 +250,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
         <div className="rounded-xl p-3 bg-white border border-linha">
           <p className="text-[10px] font-semibold text-apoio uppercase tracking-wide mb-1">Template fixo (opt-in)</p>
           <p className="text-xs text-tinta leading-relaxed">{templateOptin.nome}</p>
-          <p className="text-xs text-apoio mt-1">{personalizar(templateOptin.corpo, { nome: "João", bairro: "Centro", cidade: "SBO" } as ContatoFila)}</p>
+          <p className="text-xs text-apoio mt-1">{personalizar(templateOptin.texto, { nome: "João", bairro: "Centro", cidade: "SBO" } as ContatoFila)}</p>
         </div>
       )}
 
@@ -311,7 +311,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       {listaFiltrada.map((c) => {
         const foiEnviado = c.id in enviados;
         const horaEnvio = enviados[c.id];
-        const msg = templateAtual ? personalizar(templateAtual.corpo, c) : "";
+        const msg = templateAtual ? personalizar(templateAtual.texto, c) : "";
         const esteEnviando = enviandoId === c.id;
 
         return (

@@ -7,7 +7,7 @@ const LIMITE_IMAGEM = 5 * 1024 * 1024;   // 5 MB
 const LIMITE_VIDEO  = 16 * 1024 * 1024;  // 16 MB
 
 interface Template {
-  id: string; nome: string; corpo: string;
+  id: string; nome: string; texto: string;
   tipo: "normal" | "optin";
   media_url: string | null; media_type: "image" | "video" | null;
 }
@@ -67,7 +67,7 @@ export default function Templates({ perfil, onVoltar }: { perfil: Perfil; onVolt
                   {t.tipo === "normal" ? "Normal" : "Opt-in"}
                 </span>
               </div>
-              <p className="text-xs mt-1 text-apoio whitespace-pre-wrap">{personalizar(t.corpo)}</p>
+              <p className="text-xs mt-1 text-apoio whitespace-pre-wrap">{personalizar(t.texto)}</p>
             </div>
             {podeEditar && (
               <div className="flex gap-1.5 shrink-0">
@@ -121,7 +121,7 @@ export default function Templates({ perfil, onVoltar }: { perfil: Perfil; onVolt
 function ModalTemplate({ perfil, inicial, onFechar, onSalvo, urlBase }:
   { perfil: Perfil; inicial: Template | null; onFechar: () => void; onSalvo: () => void; urlBase: string }) {
   const [nome, setNome] = useState(inicial?.nome ?? "");
-  const [corpo, setCorpo] = useState(inicial?.corpo ?? "");
+  const [texto, setTexto] = useState(inicial?.texto ?? "");
   const [tipo, setTipo] = useState<"normal" | "optin">(inicial?.tipo ?? "normal");
   const [mediaUrl, setMediaUrl] = useState<string | null>(inicial?.media_url ?? null);
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(inicial?.media_type ?? null);
@@ -164,9 +164,9 @@ function ModalTemplate({ perfil, inicial, onFechar, onSalvo, urlBase }:
   const salvar = async () => {
     setErro("");
     if (!nome.trim()) return setErro("Dê um nome ao template.");
-    if (!corpo.trim()) return setErro("O corpo da mensagem não pode ser vazio.");
+    if (!texto.trim()) return setErro("O texto da mensagem não pode ser vazio.");
     setSalvando(true);
-    const payload = { nome: nome.trim(), corpo: corpo.trim(), tipo, media_url: mediaUrl, media_type: mediaType };
+    const payload = { nome: nome.trim(), texto: texto.trim(), tipo, media_url: mediaUrl, media_type: mediaType };
     const { error } = inicial
       ? await supabase.from("message_templates").update(payload).eq("id", inicial.id)
       : await supabase.from("message_templates").insert({ ...payload, workspace_id: perfil.workspace_id, criado_por: perfil.id });
@@ -203,9 +203,9 @@ function ModalTemplate({ perfil, inicial, onFechar, onSalvo, urlBase }:
           <div>
             <label className="text-xs font-semibold mb-1 block text-tinta">Mensagem</label>
             <textarea className="w-full rounded-xl px-3 py-2.5 text-sm outline-none border border-linha bg-white min-h-[90px]"
-              value={corpo} onChange={(e) => setCorpo(e.target.value)}
+              value={texto} onChange={(e) => setTexto(e.target.value)}
               placeholder="Use {nome} e {regiao} como variáveis." />
-            <p className="text-[10px] mt-1 text-apoio">Preview: {personalizar(corpo || "{nome} – {regiao}")}</p>
+            <p className="text-[10px] mt-1 text-apoio">Preview: {personalizar(texto || "{nome} – {regiao}")}</p>
           </div>
           <div>
             <label className="text-xs font-semibold mb-1 block text-tinta">Mídia (opcional)</label>
