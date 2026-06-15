@@ -33,9 +33,9 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
 
   const lista = contatos.filter((c) =>
     (!cidadeF || c.cidade === cidadeF) &&
-    (!busca || c.nome.toLowerCase().includes(busca.toLowerCase()) || c.celular_e164.includes(busca.replace(/\D/g, ""))));
+    (!busca || (c.nome ?? "").toLowerCase().includes(busca.toLowerCase()) || (c.celular_e164 ?? "").includes(busca.replace(/\D/g, ""))));
 
-  const exibirCelular = (e164: string) => mascaraCelular(e164.replace("+55", ""));
+  const exibirCelular = (e164: string) => mascaraCelular((e164 ?? "").replace("+55", ""));
 
   return (
     <div className="space-y-3 pb-4">

@@ -14,7 +14,7 @@ interface Template {
 
 const EXEMPLO = { nome: "João", regiao: "Jardim América" };
 const personalizar = (corpo: string) =>
-  corpo.replace(/\{nome\}/g, EXEMPLO.nome).replace(/\{regiao\}/g, EXEMPLO.regiao);
+  (corpo ?? "").replace(/\{nome\}/g, EXEMPLO.nome).replace(/\{regiao\}/g, EXEMPLO.regiao);
 
 export default function Templates({ perfil, onVoltar }: { perfil: Perfil; onVoltar: () => void }) {
   const [templates, setTemplates] = useState<Template[]>([]);

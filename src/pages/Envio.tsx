@@ -19,9 +19,9 @@ interface ContatoFila {
 interface Tag { id: string; nome: string; }
 
 const personalizar = (corpo: string, contato: ContatoFila) => {
-  const nome = contato.nome.split(" ")[0];
-  const regiao = contato.bairro || contato.cidade;
-  return corpo.replace(/\{nome\}/g, nome).replace(/\{regiao\}/g, regiao);
+  const nome = (contato.nome ?? "").split(" ")[0];
+  const regiao = contato.bairro || contato.cidade || "";
+  return (corpo ?? "").replace(/\{nome\}/g, nome).replace(/\{regiao\}/g, regiao);
 };
 
 export default function Envio({ perfil }: { perfil: Perfil }) {
@@ -165,7 +165,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
     setAutorizando((p) => p.filter((x) => x !== contato.id));
   };
 
-  const exibirCelular = (e164: string) => mascaraCelular(e164.replace("+55", ""));
+  const exibirCelular = (e164: string) => mascaraCelular((e164 ?? "").replace("+55", ""));
 
   return (
     <div className="space-y-3 pb-4">

@@ -27,4 +27,4 @@ export function normalizarImportado(raw: string): string | null {
 }
 
 export const linkWa = (e164: string, txt: string) =>
-  `https://wa.me/${e164.replace("+", "")}?text=${encodeURIComponent(txt)}`;
+  `https://wa.me/${(e164 ?? "").replace("+", "")}?text=${encodeURIComponent(txt)}`;
