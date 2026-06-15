@@ -9,6 +9,7 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import Inicio from "./pages/Inicio";
 import Contatos from "./pages/Contatos";
 import NovoContato from "./pages/NovoContato";
+import Envio from "./pages/Envio";
 import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut } from "lucide-react";
 
 const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "Sumaré"];
@@ -70,7 +71,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
           {aba === "inicio" && <Inicio perfil={perfil} />}
           {aba === "contatos" && <Contatos perfil={perfil} />}
           {aba === "novo" && <NovoContato perfil={perfil} cidades={cidades} aoAdicionarCidade={adicionarCidade} />}
-          {aba === "envio" && <p className="text-sm text-apoio p-4 bg-white rounded-xl border border-linha">Envio assistido chega na Etapa 7. A fundação (templates, send_logs, regra de consentimento) já está no banco.</p>}
+          {aba === "envio" && <Envio perfil={perfil} />}
           {aba === "agenda" && <p className="text-sm text-apoio p-4 bg-white rounded-xl border border-linha">Agenda da equipe chega na Etapa 8 (FullCalendar + realtime).</p>}
         </main>
 
