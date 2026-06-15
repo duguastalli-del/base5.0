@@ -165,6 +165,10 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       } catch { /* não há mídia disponível, segue só com texto */ }
     }
 
+    // Abre WhatsApp ANTES do await do Supabase: iOS Safari descarta ?text=
+    // quando window.open é chamado após qualquer await.
+    if (abrirWa) window.open(linkWa(contato.celular_e164, msg), "_blank");
+
     await supabase.from("send_logs").insert({
       workspace_id: perfil.workspace_id,
       contact_id: contato.id,
@@ -172,8 +176,6 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       modo,
       enviado_por: perfil.id,
     });
-
-    if (abrirWa) window.open(linkWa(contato.celular_e164, msg), "_blank");
 
     const agora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     setEnviados((p) => ({ ...p, [contato.id]: agora }));
