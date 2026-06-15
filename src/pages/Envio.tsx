@@ -74,6 +74,27 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
     let ativo = true;
     setCarregando(true);
     const carregar = async () => {
+      // Filtro de tags: busca contact_ids antes da query principal
+      let tagContactIds: string[] | null = null;
+      if (filtTags.length > 0) {
+        const { data: ctData } = await supabase
+          .from("contact_tags")
+          .select("contact_id, tag_id")
+          .in("tag_id", filtTags);
+        // AND: contato precisa ter TODAS as tags selecionadas
+        const contagens: Record<string, number> = {};
+        for (const row of (ctData ?? [])) {
+          contagens[row.contact_id] = (contagens[row.contact_id] ?? 0) + 1;
+        }
+        tagContactIds = Object.entries(contagens)
+          .filter(([, n]) => n >= filtTags.length)
+          .map(([id]) => id);
+        if (tagContactIds.length === 0) {
+          if (ativo) { setFila([]); setCarregando(false); }
+          return;
+        }
+      }
+
       let q = supabase.from("contacts")
         .select("id, nome, celular_e164, cidade, bairro, consent, criado_por")
         .neq("status", "anonimizado")
@@ -84,13 +105,14 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
 
       if (!podeVerTodos) q = q.eq("criado_por", perfil.id);
       if (filtCidade) q = q.eq("cidade", filtCidade);
+      if (tagContactIds !== null) q = q.in("id", tagContactIds);
 
       const { data } = await q.order("nome").limit(300);
       if (ativo) { setFila((data as ContatoFila[]) ?? []); setCarregando(false); }
     };
     carregar();
     return () => { ativo = false; };
-  }, [modo, filtCidade, podeVerTodos, perfil.id]);
+  }, [modo, filtCidade, filtTags, podeVerTodos, perfil.id]);
 
   // Bairros disponíveis quando filtro de cidade muda
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
-import { db, sincronizar, pendentes } from "../lib/db";
+import { db, sincronizar, pendentes, salvarContactTags } from "../lib/db";
 import { mascaraCelular, paraE164, soDigitos } from "../lib/format";
 import { AlertTriangle, CheckCircle2, CloudOff, Plus } from "lucide-react";
 
@@ -51,12 +51,15 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
     };
 
     if (navigator.onLine) {
-      const { error } = await supabase.from("contacts").insert({
+      const { data: contactData, error } = await supabase.from("contacts").insert({
         ...registro, workspace_id: perfil.workspace_id, criado_por: perfil.id,
-      });
+      }).select("id").single();
       if (error) {
         if (error.code === "23505") return setErro("Este número já está cadastrado na base.");
         return setErro("Falha ao salvar: " + error.message);
+      }
+      if (contactData?.id && f.tags.length > 0) {
+        await salvarContactTags(contactData.id as string, f.tags, perfil.workspace_id);
       }
       setSalvo("online");
     } else {

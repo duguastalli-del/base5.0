@@ -10,32 +10,76 @@ interface Contato {
   consent: "sim" | "pendente" | "recusou"; criado_em: string;
 }
 
+interface TagItem { id: string; nome: string; }
+
 export default function Contatos({ perfil }: { perfil: Perfil }) {
   const [contatos, setContatos] = useState<Contato[]>([]);
   const [busca, setBusca] = useState("");
   const [cidadeF, setCidadeF] = useState("");
+  const [tagsFiltro, setTagsFiltro] = useState<string[]>([]);
+  const [tagsDisponiveis, setTagsDisponiveis] = useState<TagItem[]>([]);
+  const [contatoTags, setContatoTags] = useState<Record<string, string[]>>({});
   const [aberto, setAberto] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [importar, setImportar] = useState(false);
 
   const podeImportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
 
+  useEffect(() => {
+    supabase.from("tags").select("id, nome").then(({ data }) => {
+      setTagsDisponiveis((data as TagItem[]) ?? []);
+    });
+  }, []);
+
   const carregar = async () => {
     setCarregando(true);
     const { data } = await supabase.from("contacts").select("*")
       .neq("status", "anonimizado").order("criado_em", { ascending: false }).limit(500);
-    setContatos((data as Contato[]) ?? []);
+    const lista = (data as Contato[]) ?? [];
+    setContatos(lista);
+
+    if (lista.length > 0) {
+      const ids = lista.map((c) => c.id);
+      const { data: ctData } = await supabase
+        .from("contact_tags")
+        .select("contact_id, tag_id")
+        .in("contact_id", ids);
+      const mapa: Record<string, string[]> = {};
+      for (const row of (ctData ?? [])) {
+        if (!mapa[row.contact_id]) mapa[row.contact_id] = [];
+        mapa[row.contact_id].push(row.tag_id);
+      }
+      setContatoTags(mapa);
+    } else {
+      setContatoTags({});
+    }
+
     setCarregando(false);
   };
   useEffect(() => { carregar(); }, []);
 
   const cidades = useMemo(() => [...new Set(contatos.map((c) => c.cidade))].sort(), [contatos]);
 
-  const lista = contatos.filter((c) =>
-    (!cidadeF || c.cidade === cidadeF) &&
-    (!busca || (c.nome ?? "").toLowerCase().includes(busca.toLowerCase()) || (c.celular_e164 ?? "").includes(busca.replace(/\D/g, ""))));
+  const lista = contatos.filter((c) => {
+    if (cidadeF && c.cidade !== cidadeF) return false;
+    if (busca && !(c.nome ?? "").toLowerCase().includes(busca.toLowerCase()) && !(c.celular_e164 ?? "").includes(busca.replace(/\D/g, ""))) return false;
+    if (tagsFiltro.length > 0) {
+      const tagsDoContato = contatoTags[c.id] ?? [];
+      if (!tagsFiltro.every((id) => tagsDoContato.includes(id))) return false;
+    }
+    return true;
+  });
+
+  const alternarTagFiltro = (id: string) =>
+    setTagsFiltro((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
 
   const exibirCelular = (e164: string) => mascaraCelular((e164 ?? "").replace("+55", ""));
+
+  const chipCidade = (ativo: boolean) =>
+    `shrink-0 rounded-full px-3 py-1 text-xs font-medium ${ativo ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`;
+
+  const chipTag = (ativo: boolean) =>
+    `shrink-0 rounded-full px-3 py-1 text-xs font-medium inline-flex items-center gap-1 ${ativo ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`;
 
   return (
     <div className="space-y-3 pb-4">
@@ -57,58 +101,81 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1">
-        <button onClick={() => setCidadeF("")}
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${!cidadeF ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
-          Todas
-        </button>
+        <button onClick={() => setCidadeF("")} className={chipCidade(!cidadeF)}>Todas</button>
         {cidades.map((cd) => (
           <button key={cd} onClick={() => setCidadeF(cd === cidadeF ? "" : cd)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium inline-flex items-center gap-1 ${cidadeF === cd ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
+            className={`${chipCidade(cidadeF === cd)} inline-flex items-center gap-1`}>
             <Building2 size={10} /> {cd}
           </button>
         ))}
       </div>
 
+      {tagsDisponiveis.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tagsDisponiveis.map((tg) => (
+            <button key={tg.id} onClick={() => alternarTagFiltro(tg.id)}
+              className={chipTag(tagsFiltro.includes(tg.id))}>
+              <Tag size={9} /> {tg.nome}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="text-xs text-apoio">{carregando ? "Carregando..." : `${lista.length} contato(s)`}</div>
 
       {!carregando && lista.length === 0 && (
         <div className="bg-white border border-linha rounded-xl p-5 text-center">
-          <p className="text-sm text-apoio">Base vazia por aqui. Vá em <b className="text-marca">Novo</b> e cadastre o primeiro!</p>
+          <p className="text-sm text-apoio">
+            {tagsFiltro.length > 0 || cidadeF || busca
+              ? "Nenhum contato encontrado com esses filtros."
+              : <>Base vazia por aqui. Vá em <b className="text-marca">Novo</b> e cadastre o primeiro!</>}
+          </p>
         </div>
       )}
 
-      {lista.map((c) => (
-        <div key={c.id} onClick={() => setAberto(aberto === c.id ? null : c.id)}
-          className="bg-white border border-linha rounded-xl p-4 cursor-pointer active:opacity-80">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-tinta">{c.nome}</div>
-              <div className="text-xs mt-0.5 text-apoio">
-                {exibirCelular(c.celular_e164)} · {c.bairro ? `${c.bairro} · ` : ""}{c.cidade}
+      {lista.map((c) => {
+        const tagsDoContato = (contatoTags[c.id] ?? [])
+          .map((tid) => tagsDisponiveis.find((t) => t.id === tid)?.nome)
+          .filter(Boolean) as string[];
+
+        return (
+          <div key={c.id} onClick={() => setAberto(aberto === c.id ? null : c.id)}
+            className="bg-white border border-linha rounded-xl p-4 cursor-pointer active:opacity-80">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-tinta">{c.nome}</div>
+                <div className="text-xs mt-0.5 text-apoio">
+                  {exibirCelular(c.celular_e164)} · {c.bairro ? `${c.bairro} · ` : ""}{c.cidade}
+                </div>
               </div>
+              <ChevronRight size={16} className="text-apoio" style={{ transform: aberto === c.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
             </div>
-            <ChevronRight size={16} className="text-apoio" style={{ transform: aberto === c.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-          </div>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {c.consent === "sim" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-50 text-ok"><CheckCircle2 size={10} /> LGPD ok</span>}
-            {c.consent === "pendente" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-alerta"><AlertTriangle size={10} /> Opt-in pendente</span>}
-            {c.consent === "recusou" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-50 text-erro"><X size={10} /> Recusou</span>}
-            {c.origem && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-fundo text-apoio"><Tag size={10} /> {c.origem}</span>}
-          </div>
-          {aberto === c.id && (
-            <div className="mt-3 pt-3 border-t border-linha space-y-2">
-              {c.obs && <p className="text-xs text-apoio"><b className="text-tinta">Obs:</b> {c.obs}</p>}
-              <a href={linkWa(c.celular_e164, `Olá ${c.nome.split(" ")[0]}, tudo bem?`)} target="_blank" rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white"
-                style={{ background: "#1FAF5E" }}>
-                <MessageCircle size={13} /> WhatsApp
-              </a>
-              <p className="text-[10px] text-apoio">Editar, arquivar e excluir chegam na Etapa 4.</p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {c.consent === "sim" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-50 text-ok"><CheckCircle2 size={10} /> LGPD ok</span>}
+              {c.consent === "pendente" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-alerta"><AlertTriangle size={10} /> Opt-in pendente</span>}
+              {c.consent === "recusou" && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-50 text-erro"><X size={10} /> Recusou</span>}
+              {c.origem && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-fundo text-apoio"><Tag size={10} /> {c.origem}</span>}
+              {tagsDoContato.map((nome) => (
+                <span key={nome} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-marca">
+                  <Tag size={10} /> {nome}
+                </span>
+              ))}
             </div>
-          )}
-        </div>
-      ))}
+            {aberto === c.id && (
+              <div className="mt-3 pt-3 border-t border-linha space-y-2">
+                {c.obs && <p className="text-xs text-apoio"><b className="text-tinta">Obs:</b> {c.obs}</p>}
+                <a href={linkWa(c.celular_e164, `Olá ${(c.nome ?? "").split(" ")[0]}, tudo bem?`)} target="_blank" rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white"
+                  style={{ background: "#1FAF5E" }}>
+                  <MessageCircle size={13} /> WhatsApp
+                </a>
+                <p className="text-[10px] text-apoio">Editar, arquivar e excluir chegam na Etapa 4.</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
