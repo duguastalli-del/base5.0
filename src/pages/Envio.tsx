@@ -14,7 +14,6 @@ interface ContatoFila {
   id: string; nome: string; celular_e164: string;
   cidade: string; bairro: string | null; consent: string;
   criado_por: string;
-  contact_tags: { tag_id: string }[];
 }
 
 interface Tag { id: string; nome: string; }
@@ -44,7 +43,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
 
   // Fila de contatos
   const [fila, setFila] = useState<ContatoFila[]>([]);
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
 
   // Filtros
   const [tags, setTags] = useState<Tag[]>([]);
@@ -54,8 +53,8 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
   const [bairrosDisp, setBairrosDisp] = useState<string[]>([]);
 
   // Estado de envio por contato
-  const [enviados, setEnviados] = useState<Map<string, string>>(new Map()); // id → HH:MM
-  const [autorizando, setAutorizando] = useState<Set<string>>(new Set());
+  const [enviados, setEnviados] = useState<Record<string, string>>({}); // id → HH:MM
+  const [autorizando, setAutorizando] = useState<string[]>([]);
   const [enviandoId, setEnviandoId] = useState<string | null>(null);
   const [avisoFallback, setAvisoFallback] = useState<{ id: string; msg: string } | null>(null);
 
@@ -72,10 +71,11 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
 
   // Carrega fila de contatos
   useEffect(() => {
+    let ativo = true;
+    setCarregando(true);
     const carregar = async () => {
-      setCarregando(true);
       let q = supabase.from("contacts")
-        .select("id, nome, celular_e164, cidade, bairro, consent, criado_por, contact_tags(tag_id)")
+        .select("id, nome, celular_e164, cidade, bairro, consent, criado_por")
         .neq("status", "anonimizado")
         .neq("consent", "recusou");
 
@@ -86,10 +86,10 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       if (filtCidade) q = q.eq("cidade", filtCidade);
 
       const { data } = await q.order("nome").limit(300);
-      setFila((data as ContatoFila[]) ?? []);
-      setCarregando(false);
+      if (ativo) { setFila((data as ContatoFila[]) ?? []); setCarregando(false); }
     };
     carregar();
+    return () => { ativo = false; };
   }, [modo, filtCidade, podeVerTodos, perfil.id]);
 
   // Bairros disponíveis quando filtro de cidade muda
@@ -107,8 +107,6 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
   const listaFiltrada = useMemo(() => {
     let l = fila;
     if (filtBairro) l = l.filter((c) => c.bairro === filtBairro);
-    if (filtTags.length > 0)
-      l = l.filter((c) => filtTags.every((tid) => c.contact_tags?.some((ct) => ct.tag_id === tid)));
     return l;
   }, [fila, filtBairro, filtTags]);
 
@@ -156,16 +154,15 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
     if (abrirWa) window.open(linkWa(contato.celular_e164, msg), "_blank");
 
     const agora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-    setEnviados((p) => new Map(p).set(contato.id, agora));
+    setEnviados((p) => ({ ...p, [contato.id]: agora }));
     setEnviandoId(null);
   };
 
   const marcarAutorizado = async (contato: ContatoFila) => {
-    setAutorizando((p) => new Set(p).add(contato.id));
+    setAutorizando((p) => [...p, contato.id]);
     await supabase.from("contacts").update({ consent: "sim" }).eq("id", contato.id);
-    // Remove da fila opt-in localmente
     setFila((p) => p.filter((c) => c.id !== contato.id));
-    setAutorizando((p) => { const n = new Set(p); n.delete(contato.id); return n; });
+    setAutorizando((p) => p.filter((x) => x !== contato.id));
   };
 
   const exibirCelular = (e164: string) => mascaraCelular(e164.replace("+55", ""));
@@ -288,8 +285,8 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
 
       {/* Fila */}
       {listaFiltrada.map((c) => {
-        const foiEnviado = enviados.has(c.id);
-        const horaEnvio = enviados.get(c.id);
+        const foiEnviado = c.id in enviados;
+        const horaEnvio = enviados[c.id];
         const msg = templateAtual ? personalizar(templateAtual.corpo, c) : "";
         const esteEnviando = enviandoId === c.id;
 
@@ -335,13 +332,13 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
             )}
 
             {/* Botão opt-in */}
-            {modo === "optin" && foiEnviado && !autorizando.has(c.id) && (
+            {modo === "optin" && foiEnviado && !autorizando.includes(c.id) && (
               <button onClick={() => marcarAutorizado(c)}
                 className="w-full rounded-xl py-2 text-xs font-bold text-ok border border-green-200 bg-green-50 flex items-center justify-center gap-1.5">
                 <CheckCircle2 size={13} /> Respondeu SIM — marcar como autorizado
               </button>
             )}
-            {autorizando.has(c.id) && (
+            {autorizando.includes(c.id) && (
               <p className="text-xs text-ok flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Atualizando...</p>
             )}
           </div>
