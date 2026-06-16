@@ -1,0 +1,56 @@
+name: Deploy Edge Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/**"
+
+  workflow_dispatch:
+    inputs:
+      function:
+        description: "Nome da função (deixe vazio para todas)"
+        required: false
+        default: ""
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy todas as Edge Functions
+        if: ${{ github.event.inputs.function == '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy whatsapp-testar-conexao \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+
+          supabase functions deploy whatsapp-submeter-template \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+
+          supabase functions deploy whatsapp-enviar-disparo \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+
+          supabase functions deploy whatsapp-webhook \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --no-verify-jwt
+
+      - name: Deploy função específica
+        if: ${{ github.event.inputs.function != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${{ github.event.inputs.function }}" = "whatsapp-webhook" ]; then
+            EXTRA_FLAGS="--no-verify-jwt"
+          fi
+          supabase functions deploy ${{ github.event.inputs.function }} \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+            $EXTRA_FLAGS
