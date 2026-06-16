@@ -11,7 +11,8 @@ import Contatos from "./pages/Contatos";
 import NovoContato from "./pages/NovoContato";
 import Envio from "./pages/Envio";
 import Agenda from "./pages/Agenda";
-import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut } from "lucide-react";
+import WhatsAppHub from "./pages/WhatsAppHub";
+import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut, MessageCircle } from "lucide-react";
 
 const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "Sumaré"];
 
@@ -47,7 +48,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
     { id: "envio", rotulo: "Envio", icone: Send, titulo: "Envio assistido" },
     { id: "agenda", rotulo: "Agenda", icone: CalendarDays, titulo: "Agenda da equipe" },
   ];
-  const atual = abas.find((a) => a.id === aba)!;
+  const atual = abas.find((a) => a.id === aba) ?? { titulo: "WhatsApp API" };
 
   return (
     <div className="min-h-screen w-full flex justify-center bg-fundo">
@@ -61,9 +62,21 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
                 <div className="text-xs text-apoio">{perfil.nome} · {perfil.papel}</div>
               </div>
             </div>
-            <button onClick={sair} className="flex items-center gap-1 text-xs text-apoio">
-              <LogOut size={13} /> Sair
-            </button>
+            <div className="flex items-center gap-2">
+              {(perfil.papel === "administrador" || perfil.papel === "coordenador") && (
+                <button
+                  onClick={() => setAba(aba === "whatsapp" ? "inicio" : "whatsapp")}
+                  title="WhatsApp API"
+                  className={`rounded-xl px-2 py-1.5 text-xs font-semibold flex items-center gap-1 ${
+                    aba === "whatsapp" ? "text-marca bg-blue-50" : "text-apoio"
+                  }`}>
+                  <MessageCircle size={14} /> WA API
+                </button>
+              )}
+              <button onClick={sair} className="flex items-center gap-1 text-xs text-apoio">
+                <LogOut size={13} /> Sair
+              </button>
+            </div>
           </div>
           <h1 className="text-lg font-bold mt-4 text-tinta">{atual.titulo}</h1>
         </header>
@@ -74,6 +87,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
           {aba === "novo" && <NovoContato perfil={perfil} cidades={cidades} aoAdicionarCidade={adicionarCidade} />}
           {aba === "envio" && <Envio perfil={perfil} />}
           {aba === "agenda" && <Agenda perfil={perfil} />}
+          {aba === "whatsapp" && <WhatsAppHub perfil={perfil} />}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-2 pb-3 pt-2 bg-white border-t border-linha">
