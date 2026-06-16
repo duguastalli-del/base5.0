@@ -10,6 +10,7 @@ import Inicio from "./pages/Inicio";
 import Contatos from "./pages/Contatos";
 import NovoContato from "./pages/NovoContato";
 import Envio from "./pages/Envio";
+import Agenda from "./pages/Agenda";
 import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut } from "lucide-react";
 
 const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "Sumaré"];
@@ -72,7 +73,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
           {aba === "contatos" && <Contatos perfil={perfil} />}
           {aba === "novo" && <NovoContato perfil={perfil} cidades={cidades} aoAdicionarCidade={adicionarCidade} />}
           {aba === "envio" && <Envio perfil={perfil} />}
-          {aba === "agenda" && <p className="text-sm text-apoio p-4 bg-white rounded-xl border border-linha">Agenda da equipe chega na Etapa 8 (FullCalendar + realtime).</p>}
+          {aba === "agenda" && <Agenda perfil={perfil} />}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-2 pb-3 pt-2 bg-white border-t border-linha">
