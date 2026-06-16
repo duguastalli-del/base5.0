@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
 import { linkWa, mascaraCelular } from "../lib/format";
 import Templates from "./Templates";
+import EnvioLista from "../components/EnvioLista";
 import { AlertTriangle, Send, MessageCircle, CheckCircle2, Loader2, Building2, Tag, Settings } from "lucide-react";
 
 interface Template {
@@ -34,7 +35,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
   { perfil: Perfil; onGerenciarTemplates: () => void }) {
   const podeGerenciar = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const podeVerTodos = perfil.papel === "administrador" || perfil.papel === "coordenador";
-  const [modo, setModo] = useState<"normal" | "optin">("normal");
+  const [modo, setModo] = useState<"normal" | "optin" | "lista">("normal");
 
   // Templates
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -175,6 +176,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       template_id: templateAtual.id,
       modo,
       enviado_por: perfil.id,
+      mensagem_texto: msg,
     });
 
     const agora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -211,13 +213,24 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
 
       {/* Sub-tabs */}
       <div className="flex gap-1.5">
-        {(["normal", "optin"] as const).map((m) => (
-          <button key={m} onClick={() => setModo(m)}
-            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold ${modo === m ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
-            {m === "normal" ? "Mensagem (autorizados)" : "Primeiro contato (opt-in)"}
+        <button onClick={() => setModo("normal")}
+          className={`flex-1 rounded-xl py-2.5 text-xs font-semibold ${modo === "normal" ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
+          Mensagem
+        </button>
+        <button onClick={() => setModo("optin")}
+          className={`flex-1 rounded-xl py-2.5 text-xs font-semibold ${modo === "optin" ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
+          Opt-in
+        </button>
+        {podeGerenciar && (
+          <button onClick={() => setModo("lista")}
+            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold ${modo === "lista" ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`}>
+            Lista
           </button>
-        ))}
+        )}
       </div>
+
+      {/* Conteúdo da aba Lista de transmissão */}
+      {modo === "lista" && <EnvioLista perfil={perfil} />}
 
       {/* Seletor de template (só no modo normal) */}
       {modo === "normal" && (
@@ -254,7 +267,8 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
         </div>
       )}
 
-      {/* Filtros */}
+      {/* Filtros e fila — ocultos na aba Lista de transmissão */}
+      {modo !== "lista" && <>
       <div className="space-y-2">
         <div className="flex gap-1.5 overflow-x-auto pb-0.5">
           <button onClick={() => setFiltCidade("")}
@@ -377,6 +391,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
           </p>
         </div>
       )}
+      </>}
     </div>
   );
 }
