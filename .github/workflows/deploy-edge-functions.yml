@@ -25,34 +25,68 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinado em v2.47.1 para evitar regressão do v2.106.0
+          version: 2.47.1
 
-      - name: Link projeto Supabase
-        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+      # ── Diagnóstico: mostra comprimento dos segredos e testa a Management API ──
+      - name: Diagnóstico — verificar acesso à Management API
+        run: |
+          # Trim whitespace (cópia via celular pode incluir espaço/newline)
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
 
+          echo "=== Comprimento dos segredos ==="
+          echo "SUPABASE_PROJECT_ID length : ${#PROJECT_ID}  (esperado: 20)"
+          echo "SUPABASE_ACCESS_TOKEN length: ${#SUPABASE_ACCESS_TOKEN}  (esperado: ~64)"
+
+          echo ""
+          echo "=== Teste direto da Management API ==="
+          HTTP=$(curl -s -o /tmp/api_resp.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_ID")
+          echo "HTTP Status: $HTTP"
+          echo "Response body:"
+          cat /tmp/api_resp.json
+          echo ""
+
+          # Falha explicitamente se a API não retornar 200
+          if [ "$HTTP" != "200" ]; then
+            echo ""
+            echo "ERRO: Management API retornou $HTTP — verifique os secrets."
+            echo "Certifique-se que SUPABASE_PROJECT_ID tem exatamente 20 chars sem espaços,"
+            echo "e que SUPABASE_ACCESS_TOKEN foi gerado em supabase.com → Account → Access Tokens."
+            exit 1
+          fi
+
+      # ── Deploy todas as funções ──────────────────────────────────────────────
       - name: Deploy todas as Edge Functions
         if: ${{ github.event.inputs.function == '' }}
         run: |
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
+
           supabase functions deploy whatsapp-testar-conexao \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-submeter-template \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-enviar-disparo \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-webhook \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --project-ref "$PROJECT_ID" \
             --no-verify-jwt
 
+      # ── Deploy função específica ──────────────────────────────────────────────
       - name: Deploy função específica
         if: ${{ github.event.inputs.function != '' }}
         run: |
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
+
           EXTRA_FLAGS=""
           if [ "${{ github.event.inputs.function }}" = "whatsapp-webhook" ]; then
             EXTRA_FLAGS="--no-verify-jwt"
           fi
+
           supabase functions deploy "${{ github.event.inputs.function }}" \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --project-ref "$PROJECT_ID" \
             $EXTRA_FLAGS
