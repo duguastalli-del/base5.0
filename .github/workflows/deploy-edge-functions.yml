@@ -28,32 +28,58 @@ jobs:
           # Pinado em v2.47.1 para evitar regressão do v2.106.0
           version: 2.47.1
 
-      # ── Diagnóstico: mostra comprimento dos segredos e testa a Management API ──
-      - name: Diagnóstico — verificar acesso à Management API
+      # ── Diagnóstico: formato do token + listagem de projetos + teste direto ──
+      - name: Diagnóstico — verificar token e projeto
         run: |
-          # Trim whitespace (cópia via celular pode incluir espaço/newline)
           PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
 
-          echo "=== Comprimento dos segredos ==="
+          echo "=== 1. Comprimento dos segredos ==="
           echo "SUPABASE_PROJECT_ID length : ${#PROJECT_ID}  (esperado: 20)"
-          echo "SUPABASE_ACCESS_TOKEN length: ${#SUPABASE_ACCESS_TOKEN}  (esperado: ~64)"
+          echo "SUPABASE_ACCESS_TOKEN length: ${#SUPABASE_ACCESS_TOKEN}  (esperado: 64+)"
 
           echo ""
-          echo "=== Teste direto da Management API ==="
+          echo "=== 2. Formato do token ==="
+          TOKEN_PREFIX="${SUPABASE_ACCESS_TOKEN:0:4}"
+          if [ "$TOKEN_PREFIX" = "sbp_" ]; then
+            echo "Formato: PAT correto (começa com sbp_) ✓"
+          elif [ "$TOKEN_PREFIX" = "eyJh" ] || [ "$TOKEN_PREFIX" = "eyJ0" ]; then
+            echo "ERRO: Token parece ser um JWT (service_role ou anon key), NÃO um Personal Access Token."
+            echo "Gere o token em: supabase.com → avatar → Account → Access Tokens → Generate new token"
+          else
+            echo "Prefixo dos primeiros 4 chars: '$TOKEN_PREFIX'"
+            echo "Token não segue o formato esperado (sbp_...). Pode estar truncado ou incorreto."
+          fi
+
+          echo ""
+          echo "=== 3. Projetos acessíveis com este token ==="
+          curl -s \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects" \
+            | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if isinstance(data, list):
+        print(f'Total de projetos: {len(data)}')
+        for p in data:
+            print(f'  - id: {p.get(\"id\",\"?\")}  name: {p.get(\"name\",\"?\")}  region: {p.get(\"region\",\"?\")}')
+    else:
+        print('Resposta inesperada:', json.dumps(data)[:300])
+except Exception as e:
+    print('Erro ao parsear resposta:', e)
+"
+
+          echo ""
+          echo "=== 4. Teste direto no projeto específico ==="
           HTTP=$(curl -s -o /tmp/api_resp.json -w "%{http_code}" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$PROJECT_ID")
-          echo "HTTP Status: $HTTP"
-          echo "Response body:"
+          echo "HTTP Status para project/$PROJECT_ID: $HTTP"
           cat /tmp/api_resp.json
           echo ""
 
-          # Falha explicitamente se a API não retornar 200
           if [ "$HTTP" != "200" ]; then
-            echo ""
-            echo "ERRO: Management API retornou $HTTP — verifique os secrets."
-            echo "Certifique-se que SUPABASE_PROJECT_ID tem exatamente 20 chars sem espaços,"
-            echo "e que SUPABASE_ACCESS_TOKEN foi gerado em supabase.com → Account → Access Tokens."
+            echo "ERRO: verifique os itens acima para identificar o problema."
             exit 1
           fi
 
