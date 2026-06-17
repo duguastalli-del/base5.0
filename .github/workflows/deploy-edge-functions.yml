@@ -55,19 +55,7 @@ jobs:
           curl -s \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects" \
-            | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    if isinstance(data, list):
-        print(f'Total de projetos: {len(data)}')
-        for p in data:
-            print(f'  - id: {p.get(\"id\",\"?\")}  name: {p.get(\"name\",\"?\")}  region: {p.get(\"region\",\"?\")}')
-    else:
-        print('Resposta inesperada:', json.dumps(data)[:300])
-except Exception as e:
-    print('Erro ao parsear resposta:', e)
-"
+            | jq -r 'if type == "array" then "Total de projetos: \(length)", (.[] | "  - id: \(.id)  name: \(.name)  region: \(.region)") else "Resposta inesperada: \(tostring | .[0:300])" end'
 
           echo ""
           echo "=== 4. Teste direto no projeto específico ==="
