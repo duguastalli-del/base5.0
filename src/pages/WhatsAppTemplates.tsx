@@ -349,6 +349,13 @@ function ModalTemplate({
         return setErro("Já existe um template com esse Nome Meta neste workspace.");
       return setErro("Falha ao salvar: " + error.message);
     }
+    supabase.from("audit_logs").insert({
+      workspace_id: perfil.workspace_id,
+      usuario_id: perfil.id,
+      acao: inicial ? "editar_template_whatsapp" : "criar_template_whatsapp",
+      entidade: "whatsapp_templates",
+      detalhes: JSON.stringify({ nome, meta_nome: metaNome, categoria }),
+    }).catch(() => {});
     onSalvo();
   };
 
@@ -400,6 +407,14 @@ function ModalTemplate({
       );
     }
 
+    supabase.from("audit_logs").insert({
+      workspace_id: perfil.workspace_id,
+      usuario_id: perfil.id,
+      acao: "submeter_template_whatsapp",
+      entidade: "whatsapp_templates",
+      entidade_id: templateId,
+      detalhes: JSON.stringify({ nome, meta_nome: metaNome, categoria }),
+    }).catch(() => {});
     setSubmetendo(false);
     onSalvo();
   };

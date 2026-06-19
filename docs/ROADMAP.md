@@ -13,10 +13,10 @@
 |---|-------|--------|-------------------|
 | 1 | Banco + RLS + LGPD | ❓ Não versionado | Sem `.sql`. Frontend consome `profiles`, `contacts`, `tags`, `contact_tags`, `message_templates`, `send_logs`, `imports`, `audit_logs`, RPCs `meu_workspace`, `painel_resumo`, `criar_convite`, `ver_convite`, `incrementar_disparo_contador`, views `v_contatos_por_cidade`, `v_ranking_cadastradores`. Schema não verificável pelo repo. |
 | 2 | Auth + convites + trigger | ✅ Completo | `Entrar.tsx`, `CriarCampanha.tsx` (signUp com `workspace_nome`), `Convite.tsx`, `RedefinirSenha.tsx`, `CampoSenha.tsx`. Validado em produção. |
-| 3 | Cadastro offline Dexie | 🟡 Parcial | `lib/db.ts`: store `fila`, `sincronizar()`, `pendentes()`. `NovoContato.tsx`: offline badge, sync manual. **Bug conhecido:** tags não persistem no sync offline (campo `tags` guardado no Dexie mas não inserido em `contact_tags` no `sincronizar()`). |
+| 3 | Cadastro offline Dexie | ✅ Completo | `lib/db.ts`: store `fila`, `sincronizar()`, `pendentes()`, `salvarContactTags()`. `NovoContato.tsx`: offline badge, sync manual. **Bug de tags corrigido** em commit `5f5c428` (2026-06-15) — `sincronizar()` agora salva tags em `contact_tags` após sync. Ver `docs/BUGS_RESOLVIDOS.md#BUG-01`. |
 | 4 | Gestão completa de contatos | ✅ Completo | `Contatos.tsx` (271 linhas), `DetalheContato.tsx` (editar/arquivar/excluir/anonimizar). Commit `70a6e1d` (2026-06-16). `DetalheContato.tsx` escreve em `audit_logs` nas ações destrutivas. |
 | 5 | Importação XLSX + Google Contatos | 🟡 Parcial | `ModalImportar.tsx`: XLSX (`xlsx` instalado) ✅; Google OAuth (`supabase.auth.signInWithOAuth` com scope `contacts.readonly` + People API) implementado mas **bloqueado** — provider Google não habilitado no Supabase Dashboard. Agenda (Contact Picker API iOS): não implementada, tem aviso de fallback. |
-| 6 | Exportação XLSX/CSV | ⛔ Zero | Nenhum arquivo implementa exportação. `xlsx` está instalado mas nunca chamado para escrita. |
+| 6 | Exportação XLSX/CSV | ✅ Completo | `src/components/ExportarContatos.tsx` (240 linhas). `Contatos.tsx`: botão "Exportar" para admin/coordenador. Formato xlsx ou csv, seleção de colunas, escopo (filtrado ou todos do workspace), coluna Tags, resolve criado_por → nome do perfil, audit log. Commit `1bdd407` (2026-06-19). |
 | 7 | WhatsApp assistido + listas transmissão | ✅ Completo | `Envio.tsx` (397 linhas): modo normal + opt-in + lista, templates `{nome}/{regiao}`, mídia via Storage, Web Share + fallback. `EnvioLista.tsx`: lista de transmissão. `send_logs` escritos. |
 | 8 | Agenda FullCalendar + Realtime + Push | 🟡 Parcial | `Agenda.tsx` (196 linhas): FullCalendar (daygrid + list + interaction), Supabase Realtime via `supabase.channel()`, Notifications API para push. **Google Calendar:** botão "em breve" presente, OAuth não implementado. |
 | 9 | Dashboard | 🟡 Parcial | `Inicio.tsx` (111 linhas): 4 cards KPI, barras por cidade (CSS puro, sem Recharts), ranking de cadastradores. RPCs e views do banco. **Faltam:** Recharts para séries temporais, evolução diária de cadastros, envios por dia. |
@@ -71,6 +71,6 @@ Ver `docs/BACKLOG.md` para detalhes com severidade, solução proposta e esforç
 | 4 | Disparo em status `enviando` orfão (sem recovery) | Não (risco pós-deploy) |
 | 5 | Pausa real de campanha não implementável sem queue | Não (limitação arquitetural) |
 | 6 | Cancelar/exportar respostas ausentes na UI | Não |
-| 7 | Audit logs de ações WhatsApp não escritos | Não |
+| 7 | ~~Audit logs de ações WhatsApp~~ ✅ Parcialmente resolvido | Não |
 | 8 | Assessor/voluntário sem acesso às telas WA (intencional?) | Não |
 | 9 | Warm-up progressivo não implementado | Não |

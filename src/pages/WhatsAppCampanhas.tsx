@@ -213,6 +213,13 @@ export default function WhatsAppCampanhas({ perfil }: { perfil: Perfil }) {
 
     if (error) { setErro("Erro ao salvar: " + error.message); setSalvando(false); return; }
 
+    supabase.from("audit_logs").insert({
+      workspace_id: perfil.workspace_id,
+      usuario_id: perfil.id,
+      acao: "criar_campanha_whatsapp",
+      entidade: "whatsapp_disparos",
+      detalhes: JSON.stringify({ nome: wzNome.trim(), template_id: wzTemplateId, filtros }),
+    }).catch(() => {});
     await carregarDisparos();
     resetWizard();
     setVista("lista");

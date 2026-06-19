@@ -173,6 +173,13 @@ export default function WhatsAppConfig({
 
     setSucesso("Configuração salva com sucesso!");
     setTimeout(() => setSucesso(""), 3000);
+    supabase.from("audit_logs").insert({
+      workspace_id: perfil.workspace_id,
+      usuario_id: perfil.id,
+      acao: "conectar_whatsapp_api",
+      entidade: "whatsapp_api_config",
+      detalhes: JSON.stringify({ bsp, ativo }),
+    }).catch(() => {});
     await carregar();
   };
 

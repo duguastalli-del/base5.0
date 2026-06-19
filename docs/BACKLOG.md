@@ -79,15 +79,14 @@
 
 ---
 
-### DT-07 — Audit logs de ações WhatsApp não escritos
+### ~~DT-07 — Audit logs de ações WhatsApp não escritos~~ ✅ RESOLVIDO (parcial)
 
 | Campo | Detalhe |
 |-------|---------|
-| **Severidade** | Baixa |
-| **Descrição** | Nenhuma das telas WhatsApp (Config, Templates, Campanhas, Respostas) escreve em `audit_logs`. Apenas `DetalheContato.tsx` usa `audit_logs`. |
-| **Solução proposta** | Inserir em `audit_logs` nas ações: salvar config API, submeter template, iniciar/cancelar disparo, opt-out manual. |
-| **Esforço estimado** | 1–2h |
-| **Bloqueia campanha?** | Não |
+| **Severidade** | ~~Baixa~~ → **Resolvido (parcial)** |
+| **Implementado em** | 2026-06-19 |
+| **O que foi feito** | `WhatsAppConfig.tsx`: `conectar_whatsapp_api` ao salvar config. `WhatsAppTemplates.tsx`: `criar_template_whatsapp`, `editar_template_whatsapp`, `submeter_template_whatsapp`. `WhatsAppCampanhas.tsx`: `criar_campanha_whatsapp`. |
+| **Ainda pendente** | Opt-out manual (WhatsAppRespostas) e cancelar disparo. |
 
 ---
 
@@ -121,15 +120,15 @@
 
 Ver DT-01. Afeta todas as etapas, não apenas Etapa 11.
 
-### DT-11 — Tags quebradas no sync offline
+### ~~DT-11 — Tags quebradas no sync offline~~ ✅ RESOLVIDO
 
 | Campo | Detalhe |
 |-------|---------|
-| **Severidade** | Alta |
-| **Descrição** | `lib/db.ts`: `ContatoPendente` tem campo `tags: string[]`, mas `sincronizar()` não insere em `contact_tags`. Tags de contatos cadastrados offline nunca chegam ao banco. |
-| **Solução proposta** | Em `sincronizar()`, após inserir o contato, chamar `salvarContactTags(contactId, pendente.tags, workspaceId)`. A função `salvarContactTags` já existe em `db.ts`. |
-| **Esforço estimado** | 30min |
-| **Bloqueia campanha?** | Não diretamente. Impacta filtros por tag em campanhas para contatos cadastrados offline. |
+| **Severidade** | ~~Alta~~ → **Resolvido** |
+| **Commit de correção** | `5f5c428` — "fix: tags persistindo no banco (online + offline) + filtros funcionais" (2026-06-15) |
+| **Descrição original** | `lib/db.ts`: `ContatoPendente` tinha campo `tags: string[]`, mas `sincronizar()` não inseria em `contact_tags`. Tags de contatos cadastrados offline nunca chegavam ao banco. |
+| **O que foi feito** | `sincronizar()` agora usa `.select("id").single()` e chama `salvarContactTags(contactId, pendente.tags, workspaceId)` após inserir o contato. O caminho online em `NovoContato.tsx` também foi corrigido. Ver `docs/BUGS_RESOLVIDOS.md#BUG-01` para detalhes completos. |
+| **Impacto residual** | Contatos offline sincronizados entre 2026-06-12 e 2026-06-15 perderam tags permanentemente. Contatos na fila no momento do fix foram salvos corretamente. |
 
 ### DT-12 — Google OAuth não configurado (duas features)
 
@@ -141,12 +140,12 @@ Ver DT-01. Afeta todas as etapas, não apenas Etapa 11.
 | **Esforço estimado** | 1h (configuração, sem código) |
 | **Bloqueia campanha?** | Não |
 
-### DT-13 — Etapas 6 e 10 com zero implementação
+### DT-13 — Etapa 10 sem implementação
 
 | Campo | Detalhe |
 |-------|---------|
 | **Severidade** | Média |
-| **Descrição** | Etapa 6 (exportação XLSX/CSV) e Etapa 10 (mapa de calor Leaflet): código zero. `xlsx` instalado mas nunca usado para escrita. `leaflet` nem instalado. |
-| **Solução proposta** | Etapa 6: `XLSX.utils.json_to_sheet()` em `Contatos.tsx`, já tem a lib. Etapa 10: instalar `leaflet` + `react-leaflet` + `leaflet.heat`. |
-| **Esforço estimado** | 4h (Etapa 6: 2h, Etapa 10: 4–6h) |
+| **Descrição** | Etapa 10 (mapa de calor Leaflet): código zero. `leaflet` nem instalado. **Etapa 6 (exportação XLSX/CSV) foi implementada e removida desta dívida** — ver commit `1bdd407`. |
+| **Solução proposta** | Instalar `leaflet` + `react-leaflet` + `leaflet.heat`, criar componente `MapaCalor.tsx` com pins por cidade (latitude/longitude). |
+| **Esforço estimado** | 4–6h |
 | **Bloqueia campanha?** | Não |
