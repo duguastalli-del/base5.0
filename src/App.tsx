@@ -12,7 +12,8 @@ import NovoContato from "./pages/NovoContato";
 import Envio from "./pages/Envio";
 import Agenda from "./pages/Agenda";
 import WhatsAppHub from "./pages/WhatsAppHub";
-import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut, MessageCircle } from "lucide-react";
+import MapaCalor from "./pages/MapaCalor";
+import { LayoutDashboard, Users, UserPlus, Send, CalendarDays, LogOut, MessageCircle, MapPin } from "lucide-react";
 
 const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "Sumaré"];
 
@@ -48,7 +49,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
     { id: "envio", rotulo: "Envio", icone: Send, titulo: "Envio assistido" },
     { id: "agenda", rotulo: "Agenda", icone: CalendarDays, titulo: "Agenda da equipe" },
   ];
-  const atual = abas.find((a) => a.id === aba) ?? { titulo: "WhatsApp API" };
+  const atual = abas.find((a) => a.id === aba) ?? (aba === "mapa" ? { titulo: "Mapa de Calor" } : { titulo: "WhatsApp API" });
 
   return (
     <div className="min-h-screen w-full flex justify-center bg-fundo">
@@ -64,14 +65,24 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
             </div>
             <div className="flex items-center gap-2">
               {(perfil.papel === "administrador" || perfil.papel === "coordenador") && (
-                <button
-                  onClick={() => setAba(aba === "whatsapp" ? "inicio" : "whatsapp")}
-                  title="WhatsApp API"
-                  className={`rounded-xl px-2 py-1.5 text-xs font-semibold flex items-center gap-1 ${
-                    aba === "whatsapp" ? "text-marca bg-blue-50" : "text-apoio"
-                  }`}>
-                  <MessageCircle size={14} /> WA API
-                </button>
+                <>
+                  <button
+                    onClick={() => setAba(aba === "mapa" ? "inicio" : "mapa")}
+                    title="Mapa de Calor"
+                    className={`rounded-xl px-2 py-1.5 text-xs font-semibold flex items-center gap-1 ${
+                      aba === "mapa" ? "text-marca bg-blue-50" : "text-apoio"
+                    }`}>
+                    <MapPin size={14} /> Mapa
+                  </button>
+                  <button
+                    onClick={() => setAba(aba === "whatsapp" ? "inicio" : "whatsapp")}
+                    title="WhatsApp API"
+                    className={`rounded-xl px-2 py-1.5 text-xs font-semibold flex items-center gap-1 ${
+                      aba === "whatsapp" ? "text-marca bg-blue-50" : "text-apoio"
+                    }`}>
+                    <MessageCircle size={14} /> WA API
+                  </button>
+                </>
               )}
               <button onClick={sair} className="flex items-center gap-1 text-xs text-apoio">
                 <LogOut size={13} /> Sair
@@ -88,6 +99,7 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
           {aba === "envio" && <Envio perfil={perfil} />}
           {aba === "agenda" && <Agenda perfil={perfil} />}
           {aba === "whatsapp" && <WhatsAppHub perfil={perfil} />}
+          {aba === "mapa" && <MapaCalor perfil={perfil} />}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-2 pb-3 pt-2 bg-white border-t border-linha">
