@@ -1,73 +1,159 @@
-# React + TypeScript + Vite
+# Base 5.0
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CRM político mobile-first para equipes de campanha. Conformidade LGPD e regras do TSE. Multi-tenant SaaS com isolamento por workspace.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | React 19 + TypeScript + Vite + Tailwind CSS |
+| PWA | vite-plugin-pwa (autoUpdate, instalável iOS/Android) |
+| Banco | Supabase (PostgreSQL + RLS + Row-Level Security) |
+| Auth | Supabase Auth (email/senha + convites por token) |
+| Offline | Dexie (IndexedDB) — fila de cadastros sem internet |
+| Agenda | FullCalendar 6 (daygrid, list, interaction) + Supabase Realtime |
+| Gráficos | Recharts (dashboard), Leaflet + react-leaflet (mapa de calor) |
+| Geocodificação | Nominatim (OpenStreetMap) — gratuito, cache em localStorage |
+| Importação | SheetJS (xlsx) + Google People API (OAuth) |
+| WhatsApp assistido | Links `wa.me` + Web Share API + Supabase Storage (mídia) |
+| WhatsApp Business API | Supabase Edge Functions (Deno) — BSP-agnóstico (360dialog / Meta) |
+| Criptografia | AES-GCM-256 via Web Crypto API (client-side e Edge Functions) |
 
-## React Compiler
+## Funcionalidades
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Cadastro de contatos** — modo rua, offline-first, bairro com autocomplete, consentimento LGPD
+- **Base de contatos** — busca, filtros, editar/arquivar/excluir/anonimizar, tags
+- **Importação** — planilha XLSX/CSV, Google Contatos (OAuth)
+- **Envio assistido WhatsApp** — templates personalizados, opt-in, listas de transmissão, mídia
+- **Agenda da equipe** — FullCalendar, eventos compartilhados em tempo real, notificações push
+- **Dashboard** — KPIs com comparativo de período, evolução temporal (Recharts), funil de engajamento, distribuição por origem, top bairros, filtros globais, exportar PDF
+- **Mapa de calor** — Leaflet + geocodificação Nominatim, heatmap/pontos, filtros, estatísticas por bairro/cidade
+- **WhatsApp Business API** — campanhas em massa, templates Meta, webhook, respostas, opt-out automático
+- **Convites** — admin gera link por papel (administrador / coordenador / assessor / voluntário)
+- **Multi-workspace** — isolamento completo via RLS no PostgreSQL
 
-## Expanding the ESLint configuration
+## Como rodar localmente
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 1. Instalar dependências
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 2. Configurar variáveis de ambiente
+cp .env.local.exemplo .env.local
+# Edite .env.local com suas credenciais do Supabase
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# 3. Iniciar em desenvolvimento
+npm run dev
+# Acesse http://localhost:5173
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 4. Build de produção
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Variáveis de ambiente
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Crie `.env.local` na raiz do projeto:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_SUPABASE_URL=https://<seu-projeto>.supabase.co
+VITE_SUPABASE_ANON_KEY=<sua-anon-key>
 ```
+
+Ambos os valores estão em: Supabase Dashboard → Project Settings → API.
+
+> As Edge Functions usam `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` injetadas automaticamente pelo runtime — não precisam ser configuradas manualmente.
+
+## Deploy
+
+### Frontend (Vercel)
+
+```bash
+vercel deploy
+# Ou conecte o repositório em vercel.com e adicione as variáveis VITE_*
+```
+
+### Edge Functions (WhatsApp Business API)
+
+Ver [`docs/EDGE_FUNCTIONS_DEPLOY.md`](docs/EDGE_FUNCTIONS_DEPLOY.md) para instruções completas.
+
+**Resumo:** deploy manual via Supabase Dashboard usando os arquivos em `supabase/functions-standalone/`. Deploy automático via GitHub Actions disponível quando o bug da Supabase Management API for resolvido.
+
+## Estrutura do projeto
+
+```
+src/
+├── lib/
+│   ├── supabase.ts          cliente Supabase + tipo Perfil
+│   ├── cripto.ts            AES-GCM-256 client-side (API keys WhatsApp)
+│   ├── db.ts                Dexie offline queue
+│   └── format.ts            formatação E.164, máscara celular, wa.me
+├── pages/
+│   ├── Entrar.tsx           login + redefinir senha
+│   ├── CriarCampanha.tsx    onboarding (cria workspace + admin)
+│   ├── Convite.tsx          aceitar convite por token
+│   ├── Inicio.tsx           dashboard
+│   ├── Contatos.tsx         lista + filtros
+│   ├── NovoContato.tsx      cadastro offline-first
+│   ├── Envio.tsx            WhatsApp assistido
+│   ├── Agenda.tsx           FullCalendar + Realtime
+│   ├── Templates.tsx        templates de mensagem
+│   ├── WhatsAppHub.tsx      hub da API Business (abas)
+│   ├── WhatsAppConfig.tsx   configuração BSP + API Key
+│   ├── WhatsAppTemplates.tsx  templates Meta oficiais
+│   ├── WhatsAppCampanhas.tsx  campanhas em massa
+│   └── WhatsAppRespostas.tsx  painel de respostas
+└── components/
+    ├── DetalheContato.tsx   modal editar/arquivar/excluir/anonimizar
+    ├── EnvioLista.tsx       lista de transmissão WhatsApp
+    ├── EventoModal.tsx      criar/editar evento na agenda
+    ├── ModalImportar.tsx    importação XLSX + Google Contatos
+    └── CampoSenha.tsx       input senha com olhinho
+
+supabase/
+├── migrations/              Schema versionado (8 arquivos SQL)
+│   ├── 001_inicial_auth_workspaces.sql
+│   ├── 002_contatos_base.sql
+│   ├── 003_audit_logs.sql
+│   ├── 004_envio_whatsapp_assistido.sql
+│   ├── 005_agenda.sql
+│   ├── 006_dashboard_views.sql
+│   ├── 007_storage_campanha.sql
+│   └── 008_whatsapp_api.sql
+├── functions/               Edge Functions (versão com _shared/)
+└── functions-standalone/    Edge Functions self-contained (deploy Dashboard)
+
+docs/
+├── ROADMAP.md               estado de todas as etapas
+├── SCHEMA.md                referência de tabelas, RPCs e views
+├── SETUP_NOVO_PROJETO.md    guia passo-a-passo para novo projeto
+├── AUDITORIA_ETAPA_11.md    auditoria completa da Etapa 11
+├── BACKLOG.md               dívidas técnicas com severidade e esforço
+├── BUGS_RESOLVIDOS.md       histórico de bugs corrigidos
+└── EDGE_FUNCTIONS_DEPLOY.md  guia de deploy das funções
+```
+
+## Papéis de usuário (RBAC)
+
+| Papel | Permissões |
+|-------|-----------|
+| `administrador` | Acesso total: convites, config WhatsApp, templates, campanhas, importação |
+| `coordenador` | Templates, campanhas, importação, ver todos os contatos |
+| `assessor` | Cadastrar e ver contatos |
+| `voluntario` | Cadastrar contatos |
+
+## Banco de dados
+
+Schema versionado em `supabase/migrations/` (8 arquivos SQL). Extraído do código em 2026-06-19.
+
+- [`docs/SCHEMA.md`](docs/SCHEMA.md) — referência completa de tabelas, RPCs, views e políticas RLS
+- [`docs/SETUP_NOVO_PROJETO.md`](docs/SETUP_NOVO_PROJETO.md) — guia passo-a-passo para novo projeto Supabase + Vercel
+
+## Roadmap e estado atual
+
+Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) para o estado detalhado de cada etapa (1–11) e pendências transversais.
+
+## Dívidas técnicas
+
+Ver [`docs/BACKLOG.md`](docs/BACKLOG.md) para a lista completa com severidade, solução proposta e esforço estimado.
+
+**Crítica (bloqueia campanha):** deploy das Edge Functions (DT-02) — resolução disponível via deploy manual no Dashboard.

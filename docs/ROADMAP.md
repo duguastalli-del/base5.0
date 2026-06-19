@@ -1,0 +1,76 @@
+# ROADMAP — Base 5.0
+
+**Última atualização:** 2026-06-19
+**Método:** leitura direta dos arquivos-fonte do repositório (não memória de sessão).
+
+> ✅ Schema versionado em `supabase/migrations/` (8 arquivos, criados em 2026-06-19). Ver `docs/SCHEMA.md` e `docs/SETUP_NOVO_PROJETO.md`. Campos com `-- TODO` requerem confirmação no Supabase Dashboard antes de usar em novo projeto.
+
+---
+
+## Estado por etapa
+
+| # | Etapa | Status | Evidência no repo |
+|---|-------|--------|-------------------|
+| 1 | Banco + RLS + LGPD | ✅ Schema versionado | 8 migrations em `supabase/migrations/` criadas em 2026-06-19 por leitura de código. Cobre: workspaces, profiles, invites, contacts, tags, contact_tags, audit_logs, message_templates, send_logs, imports, events, whatsapp_api_config, whatsapp_templates, whatsapp_disparos, whatsapp_mensagens, views v_ranking_cadastradores/v_contatos_por_cidade, RPCs painel_resumo/criar_convite/ver_convite/anonimizar_contato/incrementar_disparo_contador. Documentado em `docs/SCHEMA.md`. Campos com `-- TODO` requerem confirmação no Dashboard. |
+| 2 | Auth + convites + trigger | ✅ Completo | `Entrar.tsx`, `CriarCampanha.tsx` (signUp com `workspace_nome`), `Convite.tsx`, `RedefinirSenha.tsx`, `CampoSenha.tsx`. Validado em produção. |
+| 3 | Cadastro offline Dexie | ✅ Completo | `lib/db.ts`: store `fila`, `sincronizar()`, `pendentes()`, `salvarContactTags()`. `NovoContato.tsx`: offline badge, sync manual. **Bug de tags corrigido** em commit `5f5c428` (2026-06-15) — `sincronizar()` agora salva tags em `contact_tags` após sync. Ver `docs/BUGS_RESOLVIDOS.md#BUG-01`. |
+| 4 | Gestão completa de contatos | ✅ Completo | `Contatos.tsx` (271 linhas), `DetalheContato.tsx` (editar/arquivar/excluir/anonimizar). Commit `70a6e1d` (2026-06-16). `DetalheContato.tsx` escreve em `audit_logs` nas ações destrutivas. |
+| 5 | Importação XLSX + Google Contatos | 🟡 Parcial | `ModalImportar.tsx`: XLSX (`xlsx` instalado) ✅; Google OAuth (`supabase.auth.signInWithOAuth` com scope `contacts.readonly` + People API) implementado mas **bloqueado** — provider Google não habilitado no Supabase Dashboard. Agenda (Contact Picker API iOS): não implementada, tem aviso de fallback. |
+| 6 | Exportação XLSX/CSV | ✅ Completo | `src/components/ExportarContatos.tsx` (240 linhas). `Contatos.tsx`: botão "Exportar" para admin/coordenador. Formato xlsx ou csv, seleção de colunas, escopo (filtrado ou todos do workspace), coluna Tags, resolve criado_por → nome do perfil, audit log. Commit `1bdd407` (2026-06-19). |
+| 7 | WhatsApp assistido + listas transmissão | ✅ Completo | `Envio.tsx` (397 linhas): modo normal + opt-in + lista, templates `{nome}/{regiao}`, mídia via Storage, Web Share + fallback. `EnvioLista.tsx`: lista de transmissão. `send_logs` escritos. |
+| 8 | Agenda FullCalendar + Realtime + Push | 🟡 Parcial | `Agenda.tsx` (196 linhas): FullCalendar (daygrid + list + interaction), Supabase Realtime via `supabase.channel()`, Notifications API para push. **Google Calendar:** botão "em breve" presente, OAuth não implementado. |
+| 9 | Dashboard | ✅ Completo | `Inicio.tsx` reescrito com Recharts. Filtros globais (período 7d/30d/90d/12m, cidade, origem). KPIs com delta vs período anterior + seta de variação. 4 gráficos: EvolucaoContatos (LineChart), FunilCampanha (BarChart horizontal), DistribuicaoOrigem (PieChart rosca), TopBairros (BarChart vertical toggle 10/20). PDF export via html2canvas+jsPDF. Audit logs: consulta_dashboard, exportar_dashboard_pdf. Commits `64add2b` + `dff2348`. |
+| 10 | Mapa de calor Leaflet | ✅ Completo | `src/pages/MapaCalor.tsx` + react-leaflet v5 + leaflet.heat. Geocodificação via Nominatim com cache em localStorage (1 req/s). Toggle calor/pontos. Filtros: consentimento, origem. Painel de estatísticas: top 5 bairros (clicáveis → flyTo), top 5 cidades, % sem localização. Botão "Mapa" no header (admin/coord). Commit `1f4a50c`. |
+| 11 | WhatsApp Business API (campanhas) | 🟡 Código pronto, deploy pendente | Ver `docs/AUDITORIA_ETAPA_11.md` para detalhes completos. |
+
+---
+
+## Pendências transversais
+
+### Supabase Management API (bug ativo)
+- **Projeto:** `mdkinyexgzekrraftwqx` (us-west-2)
+- **Sintoma:** `GET /v1/projects/{ref}/*` retorna 404 para todos os endpoints específicos de projeto
+- **Impacto:** deploy de Edge Functions via CLI (`supabase functions deploy`) e GitHub Actions bloqueado
+- **Workaround:** deploy manual via Dashboard (arquivos standalone em `supabase/functions-standalone/`)
+- **Resolução:** aguardando ticket de suporte Supabase
+
+### ~~Migrations SQL não versionadas~~ ✅ RESOLVIDO (2026-06-19)
+- 8 migrations criadas em `supabase/migrations/` — schema versionado no repositório
+- Ver `docs/SCHEMA.md` para referência de tabelas/RPCs/views
+- Ver `docs/SETUP_NOVO_PROJETO.md` para guia de setup do zero
+- Campos marcados `-- TODO` ainda precisam de confirmação no Supabase Dashboard
+
+### Google OAuth (dois lugares)
+- **Importação de Contatos (Etapa 5):** `supabase.auth.signInWithOAuth` com scope Google Contacts — requer provider Google habilitado no Supabase Dashboard
+- **Google Calendar (Etapa 8):** botão "em breve" — requer scope `calendar.readonly` no mesmo provider
+- Ambos desbloqueados com a mesma configuração no Supabase Dashboard → Authentication → Providers → Google
+
+### Capacitor (deploy em loja)
+- Estrutura React/Vite é compatível
+- `@capacitor/core` não instalado
+- Sem `capacitor.config.ts`
+- Sem `android/` ou `ios/` na raiz
+- Para ir à Play Store/App Store: `npm install @capacitor/core @capacitor/cli && npx cap init`
+
+### React Query / Zod / React Hook Form
+- Não instalados. Formulários usam `useState` manual; fetch cru em `useEffect`
+- Dois crashes por `.replace()` em `null` ocorreram (patches aplicados com `?? ""`)
+- Antes de produção em escala, a camada de dados deveria ser migrada
+
+---
+
+## Dívidas técnicas da Etapa 11
+
+Ver `docs/BACKLOG.md` para detalhes com severidade, solução proposta e esforço.
+
+| # | Dívida | Bloqueia campanha? |
+|---|--------|--------------------|
+| 1 | Migrations SQL não versionadas | Não |
+| 2 | Deploy Edge Functions bloqueado (bug Supabase) | **SIM** |
+| 3 | Sync reverso de status de template não implementado | Não |
+| 4 | Disparo em status `enviando` orfão (sem recovery) | Não (risco pós-deploy) |
+| 5 | Pausa real de campanha não implementável sem queue | Não (limitação arquitetural) |
+| 6 | Cancelar/exportar respostas ausentes na UI | Não |
+| 7 | ~~Audit logs de ações WhatsApp~~ ✅ Parcialmente resolvido | Não |
+| 8 | Assessor/voluntário sem acesso às telas WA (intencional?) | Não |
+| 9 | Warm-up progressivo não implementado | Não |
