@@ -138,7 +138,16 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
     setNovosAnteriores(c2 ?? 0);
   }, [periodo, dataInicio, dataFim, cidadeF, JSON.stringify(origemF)]);
 
-  useEffect(() => { carregarComparativo(); }, [carregarComparativo]);
+  useEffect(() => {
+    carregarComparativo();
+    supabase.from("audit_logs").insert({
+      workspace_id: perfil.workspace_id,
+      usuario_id: perfil.id,
+      acao: "consulta_dashboard",
+      entidade: "dashboard",
+      detalhes: JSON.stringify({ periodo, cidadeF, origemF }),
+    }).catch(() => {});
+  }, [carregarComparativo]);
 
   const convidar = async () => {
     const { data, error } = await supabase.rpc("criar_convite", { p_email: emailConvite, p_papel: papelConvite });
@@ -396,8 +405,6 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
         )}
       </div>
 
-      {/* Audit log consulta dashboard */}
-      {/* Registrado silenciosamente ao montar com filtros */}
     </div>
   );
 }
