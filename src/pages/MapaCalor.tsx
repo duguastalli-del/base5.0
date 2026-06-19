@@ -2,7 +2,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 
 import L from "leaflet";
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { supabase, type Perfil } from "../lib/supabase";
 import { geocodificarLote, chaveGeo, type Coords } from "../lib/geocodificar";
@@ -57,7 +57,6 @@ interface ContatoMapa {
   consent: string;
 }
 
-interface TagItem { id: string; nome: string; }
 
 interface GrupoLocal {
   bairro: string;
@@ -69,7 +68,6 @@ interface GrupoLocal {
 // ─── Página principal ────────────────────────────────────────────────────────
 export default function MapaCalor({ perfil }: { perfil: Perfil }) {
   const [contatos, setContatos] = useState<ContatoMapa[]>([]);
-  const [tagsDisp, setTagsDisp] = useState<TagItem[]>([]);
   const [coordsMap, setCoordsMap] = useState<Map<string, Coords | null>>(new Map());
   const [geocodificando, setGeocodificando] = useState(false);
   const [geocProgress, setGeoProgress] = useState(0);
@@ -78,7 +76,6 @@ export default function MapaCalor({ perfil }: { perfil: Perfil }) {
 
   // Filtros
   const [modo, setModo] = useState<"calor" | "pontos">("calor");
-  const [tagsFiltro, setTagsFiltro] = useState<string[]>([]);
   const [origemF, setOrigemF] = useState<string[]>([]);
   const [consentF, setConsentF] = useState<"todos" | "optin">("todos");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
@@ -91,10 +88,6 @@ export default function MapaCalor({ perfil }: { perfil: Perfil }) {
   useEffect(() => {
     const buscar = async () => {
       setCarregando(true);
-
-      // Tags disponíveis
-      supabase.from("tags").select("id, nome")
-        .then(({ data }) => setTagsDisp((data as TagItem[]) ?? []));
 
       // Contatos (sem nested select: busco ids com tags separado se necessário)
       const { data } = await supabase.from("contacts")
@@ -152,7 +145,7 @@ export default function MapaCalor({ perfil }: { perfil: Perfil }) {
       acao: "consulta_mapa_calor",
       entidade: "contacts",
       detalhes: JSON.stringify({}),
-    }).catch(() => {});
+    }).then(undefined, () => {});
   }, []);
 
   const contatosFiltrados = useMemo(() => {

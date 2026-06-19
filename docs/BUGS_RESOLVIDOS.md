@@ -103,4 +103,58 @@ Dois problemas simultâneos zeravam a tela Envio.tsx:
 
 ---
 
+## BUG-04 — Botão "Exportar" não aparecia na tela Contatos em produção
+
+**Data da correção:** 2026-06-19
+**Commit de correção:** (ver abaixo) — "fix: botão Exportar agora aparece em Contatos para admin/coord (BUG-04)"
+**Identificado por:** Eduardo ao validar em produção (base5-0.vercel.app)
+
+### Descrição
+
+O botão "Exportar" foi implementado corretamente na sessão anterior (commit `1bdd407`). O JSX, o estado `exportar`, a constante `podeExportar` e o import de `ExportarContatos` estavam todos presentes e corretos em `src/pages/Contatos.tsx`. **O código nunca foi o problema.**
+
+### Causa raiz real
+
+O deploy no Vercel estava **travado na versão anterior a `1bdd407`** porque todos os commits subsequentes quebraram o build. O `npm run build` (`tsc -b && vite build`) falhava com **13 erros TypeScript** que foram introduzidos na mesma sessão do `1bdd407` (sessão autônoma de madrugada 19/jun):
+
+1. **`Property 'catch' does not exist on type 'PostgrestFilterBuilder'` (8 ocorrências):**
+   Todos os audit logs adicionados na sessão usavam `.catch(() => {})` diretamente no retorno de `supabase.from(...).insert({})`. O tipo `PostgrestFilterBuilder` do Supabase implementa `PromiseLike` (tem `.then()`), mas **não** expõe `.catch()` nos tipos TypeScript. Isso é pego pelo compilador `tsc -b` mas NÃO pelo `npx tsc --noEmit`, porque `tsc -b` (build mode) usa `tsconfig.app.json` que tem `noUnusedLocals: true` e tipo mais estrito.
+
+2. **`noUnusedLocals` violations (5 ocorrências):**
+   - `MapPin` importado em `Inicio.tsx` mas não usado no JSX refatorado
+   - `dataFim` como parâmetro em `periodoInicio()` declarado mas nunca lido no corpo
+   - `useCallback` importado em `MapaCalor.tsx` mas não utilizado
+   - `tagsDisp/setTagsDisp` declarado mas nunca lido fora do setter
+   - `tagsFiltro/setTagsFiltro` declarado mas nunca usado no filtro
+
+### O que foi corrigido
+
+**Em `src/pages/Inicio.tsx`:**
+- Removido `MapPin` do import de lucide-react (linha ~4)
+- Removido parâmetro `dataFim` de `periodoInicio()` — não era usado no corpo (linha ~36)
+- Corrigido call: `periodoInicio(periodo, dataInicio)` em vez de com `dataFim`
+- Substituído `.catch(() => {})` por `.then(undefined, () => {})` (2 ocorrências)
+
+**Em `src/pages/MapaCalor.tsx`:**
+- Removido `useCallback` do import React
+- Removido estado `tagsDisp/setTagsDisp` e a query de tags (não usados no filtro)
+- Removido estado `tagsFiltro/setTagsFiltro` (declarado mas não conectado ao filtro)
+- Removida interface `TagItem` que ficou órfã
+- Substituído `.catch(() => {})` por `.then(undefined, () => {})`
+
+**Em `src/components/ExportarContatos.tsx`, `src/pages/WhatsAppCampanhas.tsx`, `src/pages/WhatsAppConfig.tsx`, `src/pages/WhatsAppTemplates.tsx`:**
+- Substituído `.catch(() => {})` por `.then(undefined, () => {})` (1-2 ocorrências cada)
+
+### Por que `npx tsc --noEmit` não pegou esses erros antes
+
+`npx tsc --noEmit` (sem `-b`) não usa o modo de build composto. Ele provavelmente não estava executando com as opções de `tsconfig.app.json` (que tem `noUnusedLocals: true`). O `npm run build` usa `tsc -b` que processa o grafo de referências e usa as configurações corretas.
+
+**Lição:** Antes de cada push, rodar `npm run build` (não apenas `tsc --noEmit`) para garantir que o build completo de produção passe. Validação visual em produção após cada feature também é obrigatória.
+
+### Arquivo alterado com mais impacto
+
+`src/pages/Inicio.tsx` — ~5 linhas. `src/pages/MapaCalor.tsx` — ~8 linhas. Os WhatsApp files foram mudados apenas na linha `.catch()`.
+
+---
+
 *Arquivo atualizado em: 2026-06-19*

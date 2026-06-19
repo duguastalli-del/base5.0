@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
 import {
-  Users, MapPin, UserPlus, Copy, CheckCircle2,
+  Users, UserPlus, Copy, CheckCircle2,
   TrendingUp, TrendingDown, Minus, BarChart2, Download,
   X, Loader2, Filter,
 } from "lucide-react";
@@ -33,7 +33,7 @@ function subMeses(n: number) {
   return d;
 }
 
-function periodoInicio(p: Periodo, dataInicio?: string, dataFim?: string): Date {
+function periodoInicio(p: Periodo, dataInicio?: string): Date {
   if (p === "custom" as Periodo && dataInicio) return new Date(dataInicio);
   if (p === "7d") return subDias(7);
   if (p === "30d") return subDias(30);
@@ -115,7 +115,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
   // KPI comparativo: novos no período vs período anterior
   const carregarComparativo = useCallback(async () => {
     const fim = periodoFim(periodo, dataFim);
-    const ini = periodoInicio(periodo, dataInicio, dataFim);
+    const ini = periodoInicio(periodo, dataInicio);
     const durMs = fim.getTime() - ini.getTime();
     const iniAnterior = new Date(ini.getTime() - durMs);
 
@@ -146,7 +146,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
       acao: "consulta_dashboard",
       entidade: "dashboard",
       detalhes: JSON.stringify({ periodo, cidadeF, origemF }),
-    }).catch(() => {});
+    }).then(undefined, () => {});
   }, [carregarComparativo]);
 
   const convidar = async () => {
@@ -195,7 +195,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
         acao: "exportar_dashboard_pdf",
         entidade: "dashboard",
         detalhes: JSON.stringify({ periodo, cidadeF, origemF }),
-      }).catch(() => {});
+      }).then(undefined, () => {});
     } catch (e) {
       console.error("Erro ao exportar PDF:", e);
       alert("Erro ao gerar PDF. Tente novamente.");

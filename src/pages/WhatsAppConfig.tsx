@@ -179,7 +179,7 @@ export default function WhatsAppConfig({
       acao: "conectar_whatsapp_api",
       entidade: "whatsapp_api_config",
       detalhes: JSON.stringify({ bsp, ativo }),
-    }).catch(() => {});
+    }).then(undefined, () => {});
     await carregar();
   };
 

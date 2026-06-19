@@ -355,7 +355,7 @@ function ModalTemplate({
       acao: inicial ? "editar_template_whatsapp" : "criar_template_whatsapp",
       entidade: "whatsapp_templates",
       detalhes: JSON.stringify({ nome, meta_nome: metaNome, categoria }),
-    }).catch(() => {});
+    }).then(undefined, () => {});
     onSalvo();
   };
 
@@ -414,7 +414,7 @@ function ModalTemplate({
       entidade: "whatsapp_templates",
       entidade_id: templateId,
       detalhes: JSON.stringify({ nome, meta_nome: metaNome, categoria }),
-    }).catch(() => {});
+    }).then(undefined, () => {});
     setSubmetendo(false);
     onSalvo();
   };

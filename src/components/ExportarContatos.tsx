@@ -190,7 +190,7 @@ export default function ExportarContatos({
           include_tags: includeTags,
           scope,
         }),
-      }).catch(() => {});
+      }).then(undefined, () => {});
 
       onClose();
     } catch (e) {

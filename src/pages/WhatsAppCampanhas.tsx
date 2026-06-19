@@ -219,7 +219,7 @@ export default function WhatsAppCampanhas({ perfil }: { perfil: Perfil }) {
       acao: "criar_campanha_whatsapp",
       entidade: "whatsapp_disparos",
       detalhes: JSON.stringify({ nome: wzNome.trim(), template_id: wzTemplateId, filtros }),
-    }).catch(() => {});
+    }).then(undefined, () => {});
     await carregarDisparos();
     resetWizard();
     setVista("lista");
