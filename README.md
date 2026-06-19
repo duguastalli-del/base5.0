@@ -12,6 +12,8 @@ CRM político mobile-first para equipes de campanha. Conformidade LGPD e regras 
 | Auth | Supabase Auth (email/senha + convites por token) |
 | Offline | Dexie (IndexedDB) — fila de cadastros sem internet |
 | Agenda | FullCalendar 6 (daygrid, list, interaction) + Supabase Realtime |
+| Gráficos | Recharts (dashboard), Leaflet + react-leaflet (mapa de calor) |
+| Geocodificação | Nominatim (OpenStreetMap) — gratuito, cache em localStorage |
 | Importação | SheetJS (xlsx) + Google People API (OAuth) |
 | WhatsApp assistido | Links `wa.me` + Web Share API + Supabase Storage (mídia) |
 | WhatsApp Business API | Supabase Edge Functions (Deno) — BSP-agnóstico (360dialog / Meta) |
@@ -24,7 +26,8 @@ CRM político mobile-first para equipes de campanha. Conformidade LGPD e regras 
 - **Importação** — planilha XLSX/CSV, Google Contatos (OAuth)
 - **Envio assistido WhatsApp** — templates personalizados, opt-in, listas de transmissão, mídia
 - **Agenda da equipe** — FullCalendar, eventos compartilhados em tempo real, notificações push
-- **Dashboard** — KPIs, contatos por cidade, ranking de cadastradores
+- **Dashboard** — KPIs com comparativo de período, evolução temporal (Recharts), funil de engajamento, distribuição por origem, top bairros, filtros globais, exportar PDF
+- **Mapa de calor** — Leaflet + geocodificação Nominatim, heatmap/pontos, filtros, estatísticas por bairro/cidade
 - **WhatsApp Business API** — campanhas em massa, templates Meta, webhook, respostas, opt-out automático
 - **Convites** — admin gera link por papel (administrador / coordenador / assessor / voluntário)
 - **Multi-workspace** — isolamento completo via RLS no PostgreSQL

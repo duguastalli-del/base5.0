@@ -140,12 +140,10 @@ Ver DT-01. Afeta todas as etapas, não apenas Etapa 11.
 | **Esforço estimado** | 1h (configuração, sem código) |
 | **Bloqueia campanha?** | Não |
 
-### DT-13 — Etapa 10 sem implementação
+### ~~DT-13 — Etapa 10 sem implementação~~ ✅ RESOLVIDO
 
 | Campo | Detalhe |
 |-------|---------|
-| **Severidade** | Média |
-| **Descrição** | Etapa 10 (mapa de calor Leaflet): código zero. `leaflet` nem instalado. **Etapa 6 (exportação XLSX/CSV) foi implementada e removida desta dívida** — ver commit `1bdd407`. |
-| **Solução proposta** | Instalar `leaflet` + `react-leaflet` + `leaflet.heat`, criar componente `MapaCalor.tsx` com pins por cidade (latitude/longitude). |
-| **Esforço estimado** | 4–6h |
-| **Bloqueia campanha?** | Não |
+| **Severidade** | ~~Média~~ → **Resolvido** |
+| **Commit** | `1f4a50c` (2026-06-19) |
+| **O que foi feito** | Leaflet, react-leaflet v5, leaflet.heat instalados. `MapaCalor.tsx` criado com heatmap via Nominatim geocoding + cache localStorage. Toggle calor/pontos, filtros, painel de estatísticas com flyTo. **Etapa 6 também implementada** (commit `1bdd407`). |
