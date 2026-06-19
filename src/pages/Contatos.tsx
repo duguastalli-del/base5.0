@@ -3,15 +3,17 @@ import { supabase, type Perfil } from "../lib/supabase";
 import { mascaraCelular } from "../lib/format";
 import ModalImportar from "../components/ModalImportar";
 import DetalheContato from "../components/DetalheContato";
+import ExportarContatos from "../components/ExportarContatos";
 import {
   Search, Tag, CheckCircle2, AlertTriangle, X,
-  Building2, Smartphone, Archive,
+  Building2, Smartphone, Archive, Download,
 } from "lucide-react";
 
 interface Contato {
   id: string; nome: string; celular_e164: string; cidade: string;
   bairro: string | null; origem: string | null; obs: string | null;
   consent: "sim" | "pendente" | "recusou"; status: string; criado_em: string;
+  criado_por: string | null;
 }
 
 interface TagItem { id: string; nome: string; }
@@ -32,6 +34,8 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
   const [importar, setImportar] = useState(false);
 
   const podeImportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
+  const podeExportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
+  const [exportar, setExportar] = useState(false);
 
   useEffect(() => {
     supabase.from("tags").select("id, nome").then(({ data }) =>
@@ -110,15 +114,33 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
 
   return (
     <div className="space-y-3 pb-4">
-      <button onClick={() => podeImportar && setImportar(true)} disabled={!podeImportar}
-        title={podeImportar ? "" : "Apenas administrador e coordenador podem importar"}
-        className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 text-white bg-marca disabled:opacity-50 disabled:cursor-not-allowed">
-        <Smartphone size={16} /> + Importar contatos
-      </button>
+      <div className="flex gap-2">
+        <button onClick={() => podeImportar && setImportar(true)} disabled={!podeImportar}
+          title={podeImportar ? "" : "Apenas administrador e coordenador podem importar"}
+          className="flex-1 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 text-white bg-marca disabled:opacity-50 disabled:cursor-not-allowed">
+          <Smartphone size={16} /> Importar
+        </button>
+        {podeExportar && (
+          <button onClick={() => setExportar(true)}
+            className="flex-1 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 text-marca bg-white border border-marca">
+            <Download size={16} /> Exportar
+          </button>
+        )}
+      </div>
 
       {importar && (
         <ModalImportar perfil={perfil} cidades={cidades}
           onClose={() => setImportar(false)} onImportado={carregar} />
+      )}
+
+      {exportar && (
+        <ExportarContatos
+          perfil={perfil}
+          filtrados={lista}
+          contatoTags={contatoTags}
+          tagsDisponiveis={tagsDisponiveis}
+          onClose={() => setExportar(false)}
+        />
       )}
 
       {/* Busca */}
