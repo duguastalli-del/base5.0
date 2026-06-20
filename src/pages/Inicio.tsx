@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import {
   Users, UserPlus, Copy, CheckCircle2,
   TrendingUp, TrendingDown, Minus, BarChart2, Download,
@@ -55,6 +56,7 @@ function periodoLabel(p: Periodo): string {
 
 export default function Inicio({ perfil }: { perfil: Perfil }) {
   const dashRef = useRef<HTMLDivElement>(null);
+  const { t } = useTerminologia();
 
   const [resumo, setResumo] = useState<Resumo | null>(null);
   const [ranking, setRanking] = useState<Rank[]>([]);
@@ -290,7 +292,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
           {/* Total */}
           <div className="bg-white border border-linha rounded-xl p-3">
             <div className="text-2xl font-bold text-tinta">{resumo?.total_contatos?.toLocaleString("pt-BR") ?? "–"}</div>
-            <div className="text-[10px] text-apoio mt-0.5">Total de contatos</div>
+            <div className="text-[10px] text-apoio mt-0.5">Total de {t('contatos')}</div>
           </div>
           {/* Novos no período + delta */}
           <div className="bg-white border border-linha rounded-xl p-3">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import { db, sincronizar, pendentes, salvarContactTags } from "../lib/db";
 import { mascaraCelular, paraE164, soDigitos } from "../lib/format";
 import { AlertTriangle, CheckCircle2, CloudOff, Plus } from "lucide-react";
@@ -9,6 +10,7 @@ const ORIGENS = ["Porta a porta", "Evento", "Indicação", "Redes sociais"];
 
 export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
   { perfil: Perfil; cidades: string[]; aoAdicionarCidade: (n: string) => void }) {
+  const { t } = useTerminologia();
   const vazio = { nome: "", celular: "", cidade: "", bairro: "", tags: [] as string[], origem: "", obs: "", consentimento: false };
   const [f, setF] = useState(vazio);
   const [erro, setErro] = useState("");
@@ -96,7 +98,7 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
       {salvo && (
         <div className="rounded-xl p-3 bg-green-50 border border-green-200 flex items-center gap-2 text-sm font-medium text-ok">
           <CheckCircle2 size={16} />
-          {salvo === "online" ? "Contato salvo na base!" : "Salvo no aparelho — sincroniza quando a internet voltar."}
+          {salvo === "online" ? `${t('contato')} salvo na base!` : "Salvo no aparelho — sincroniza quando a internet voltar."}
         </div>
       )}
 
@@ -180,7 +182,7 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
       {erro && <p className="text-xs flex items-center gap-1.5 font-medium text-erro"><AlertTriangle size={13} /> {erro}</p>}
 
       <button onClick={salvar} className="w-full rounded-xl py-3.5 text-sm font-bold text-white bg-marca">
-        Salvar contato
+        Salvar {t('contato')}
       </button>
     </div>
   );

@@ -1,6 +1,6 @@
 # ROADMAP — Base 5.0
 
-**Última atualização:** 2026-06-19
+**Última atualização:** 2026-06-20
 **Método:** leitura direta dos arquivos-fonte do repositório (não memória de sessão).
 
 > ⚠️ O repositório **não contém arquivos `.sql`**. Todo o backend (tabelas, RLS, triggers, funções, views) foi aplicado diretamente no Supabase. O estado de "em produção" para o banco só pode ser verificado abrindo o Supabase Dashboard — não pelo repo.
@@ -34,11 +34,11 @@
 - **Workaround:** deploy manual via Dashboard (arquivos standalone em `supabase/functions-standalone/`)
 - **Resolução:** aguardando ticket de suporte Supabase
 
-### Migrations SQL não versionadas
-- Todo o schema existe apenas no banco de produção
-- Não há `supabase/migrations/` no repositório
-- Risco: qualquer reset de projeto ou auditoria de RLS requer acesso ao Dashboard
-- Solução: `supabase db dump --schema public > supabase/schema.sql` + versionamento
+### Migrations SQL não versionadas (parcialmente resolvido)
+- Migrations 000001–000008 estão na branch `claude/dreamy-johnson-seqpv1` (não mergeada)
+- Migration 000009 (`workspace_settings`) está no `main` como arquivo SQL versionado
+- Schema ainda não aplicado via CLI (bug Supabase MCP + Management API bloqueado)
+- Risco: qualquer reset de projeto requer aplicação manual das migrations
 
 ### Google OAuth (dois lugares)
 - **Importação de Contatos (Etapa 5):** `supabase.auth.signInWithOAuth` com scope Google Contacts — requer provider Google habilitado no Supabase Dashboard
@@ -56,6 +56,21 @@
 - Não instalados. Formulários usam `useState` manual; fetch cru em `useEffect`
 - Dois crashes por `.replace()` em `null` ocorreram (patches aplicados com `?? ""`)
 - Antes de produção em escala, a camada de dados deveria ser migrada
+
+---
+
+## Transição Multi-Vertical
+
+**Início:** 2026-06-20 · **Cliente piloto:** Antoniassi 2026 (vertical: `politica`)
+
+| Fase | Status | O que foi feito |
+|---|---|---|
+| V1 — Fundação técnica | ✅ Completo (2026-06-20) | `workspace_settings` (migration 000009, RLS, retrocompat.) · `src/lib/terminologia.ts` (8 verticais) · `src/contexts/TerminologiaContext.tsx` (hook + cache + fallback) · 4 telas adaptadas: Contatos, Inicio, Envio, NovoContato + Shell h1s |
+| V2 — Todas as telas | ⬜ Pendente | Adaptar telas restantes (DetalheContato, ExportarContatos, ModalImportar, EnvioLista, Agenda, MapaCalor, PDF export) · TAGS e ORIGENS padrão por vertical |
+| V3 — Onboarding visual | ⬜ Pendente | Tela de escolha de vertical ao criar workspace · UI de vocabulário customizado · Cores por vertical |
+| V4 — Capacitor + Lojas | ⬜ Pendente | Google Play + App Store · Primeiro cliente não-político em produção |
+
+Ver `docs/MULTI_VERTICAL.md` para documentação completa.
 
 ---
 

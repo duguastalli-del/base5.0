@@ -12,6 +12,7 @@ import NovoContato from "./pages/NovoContato";
 import Envio from "./pages/Envio";
 import Agenda from "./pages/Agenda";
 import WhatsAppHub from "./pages/WhatsAppHub";
+import { TerminologiaProvider, useTerminologia } from "./contexts/TerminologiaContext";
 
 // Leaflet + leaflet.heat precisam ficar em chunk separado do bundle principal:
 // leaflet.heat usa `L` como global e crashava quando o Rolldown a colocava
@@ -23,6 +24,7 @@ const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "S
 
 function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
   const [aba, setAba] = useState("inicio");
+  const { t } = useTerminologia();
   const [cidades, setCidades] = useState<string[]>(() => {
     const salvas = localStorage.getItem("base50-cidades");
     return salvas ? JSON.parse(salvas) : CIDADES_PADRAO;
@@ -48,8 +50,8 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
 
   const abas = [
     { id: "inicio", rotulo: "Início", icone: LayoutDashboard, titulo: "Visão geral" },
-    { id: "contatos", rotulo: "Contatos", icone: Users, titulo: "Base de contatos" },
-    { id: "novo", rotulo: "Novo", icone: UserPlus, titulo: "Novo contato" },
+    { id: "contatos", rotulo: "Contatos", icone: Users, titulo: t('base_contatos') },
+    { id: "novo", rotulo: "Novo", icone: UserPlus, titulo: t('novo_contato') },
     { id: "envio", rotulo: "Envio", icone: Send, titulo: "Envio assistido" },
     { id: "agenda", rotulo: "Agenda", icone: CalendarDays, titulo: "Agenda da equipe" },
   ];
@@ -156,14 +158,16 @@ export default function App() {
     return <div className="min-h-screen flex items-center justify-center bg-fundo"><p className="text-sm text-apoio">Carregando...</p></div>;
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/entrar" element={perfil ? <Navigate to="/" /> : <Entrar />} />
-        <Route path="/criar" element={perfil ? <Navigate to="/" /> : <CriarCampanha />} />
-        <Route path="/convite/:token" element={<Convite />} />
-        <Route path="/redefinir" element={<RedefinirSenha />} />
-        <Route path="/" element={perfil ? <Shell perfil={perfil} sair={sair} /> : <Navigate to="/entrar" />} />
-      </Routes>
-    </BrowserRouter>
+    <TerminologiaProvider perfil={perfil ?? null}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/entrar" element={perfil ? <Navigate to="/" /> : <Entrar />} />
+          <Route path="/criar" element={perfil ? <Navigate to="/" /> : <CriarCampanha />} />
+          <Route path="/convite/:token" element={<Convite />} />
+          <Route path="/redefinir" element={<RedefinirSenha />} />
+          <Route path="/" element={perfil ? <Shell perfil={perfil} sair={sair} /> : <Navigate to="/entrar" />} />
+        </Routes>
+      </BrowserRouter>
+    </TerminologiaProvider>
   );
 }
