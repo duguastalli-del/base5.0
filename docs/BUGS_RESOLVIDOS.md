@@ -157,4 +157,80 @@ O deploy no Vercel estava **travado na versão anterior a `1bdd407`** porque tod
 
 ---
 
-*Arquivo atualizado em: 2026-06-19*
+## BUG-05 — Tela branca total em produção após primeiro deploy com Etapas 9+10 (Leaflet global L)
+
+**Data da correção:** 2026-06-20
+**Commit de correção:** (ver abaixo) — "fix: lazy-load do MapaCalor para evitar conflito de ordem leaflet.heat × Leaflet (BUG-05)"
+**Identificado por:** Eduardo ao abrir base5-0.vercel.app após Vercel redeployar commit `1c19cc9`
+**Tempo em produção:** ~horas (revertido manualmente pelo Eduardo via Vercel rollback enquanto diagnóstico corria)
+
+### Descrição
+
+O app inteiro ficou com tela branca total. Nenhum elemento React era montado — o `<div id="root">` permanecia vazio.
+
+### Causa raiz
+
+`leaflet.heat` (biblioteca de mapa de calor) usa a variável global `L` do Leaflet sem importá-la como módulo. Em desenvolvimento (Vite dev server), isso funcionava porque os módulos eram carregados individualmente pelo browser em ordem correta: `leaflet.js` primeiro, `leaflet.heat.js` depois.
+
+Em produção, o Rolldown (bundler do Vite 8) concatena todos os módulos em um único `index-[hash].js`. A ordem de concatenação colocava o código de inicialização do `leaflet.heat` **antes** da linha `window.L = L` do Leaflet no bundle final, resultando em:
+
+```
+ReferenceError: L is not defined
+```
+
+Isso ocorria no escopo global do bundle antes do React sequer ser inicializado, tornando o `<div id="root">` impossível de montar.
+
+Evidência da ordem de execução no bundle de produção (dist/assets/index-[hash].js antes do fix):
+- Byte offset 1,757,410: `L.HeatLayer = ...` (leaflet.heat define HeatLayer usando `L` sem que `L` exista ainda)
+- Byte offset 1,909,784: `window.L = L` (Leaflet define o global apenas aqui)
+
+### Por que só apareceu agora
+
+As Etapas 9 (Dashboard/Recharts) e 10 (Mapa de Calor/Leaflet) foram implementadas e commitadas **depois** do commit `1bdd407` que quebrou o build TypeScript. O Vercel continuou deployando a última versão que buildava com sucesso (anterior à Etapa 9). Quando o BUG-04 foi corrigido em `1c19cc9` e o build voltou a passar, o Vercel fez deploy das Etapas 9+10 pela primeira vez — expondo o crash do leaflet.heat.
+
+### O que foi corrigido
+
+**`src/App.tsx`:**
+
+Mudança 1 — import estático → lazy:
+```tsx
+// ANTES
+import { useEffect, useState } from "react";
+import MapaCalor from "./pages/MapaCalor";
+
+// DEPOIS
+import { lazy, Suspense, useEffect, useState } from "react";
+const MapaCalor = lazy(() => import("./pages/MapaCalor"));
+```
+
+Mudança 2 — render envolto em Suspense:
+```tsx
+// ANTES
+{aba === "mapa" && <MapaCalor perfil={perfil} />}
+
+// DEPOIS
+{aba === "mapa" && (
+  <Suspense fallback={<div>/* spinner */</div>}>
+    <MapaCalor perfil={perfil} />
+  </Suspense>
+)}
+```
+
+O `import("./pages/MapaCalor")` dinâmico faz o Rolldown emitir `MapaCalor-[hash].js` como chunk separado. O browser só carrega esse chunk quando o usuário abre a aba Mapa — nesse momento, `window.L` já existe (leaflet está no main bundle), e `leaflet.heat` encontra `L` disponível.
+
+O import `import "leaflet.heat"` permanece **dentro de `MapaCalor.tsx`** (não foi movido para App.tsx) — é exatamente isso que garante o isolamento no chunk correto.
+
+### Validação
+
+- `npm run build`: passa sem erros
+- `dist/assets/MapaCalor-CwUn7n6-.js` (174.70 kB, chunk separado): contém `heatLayer`
+- `dist/assets/index-CVR4t5XA.js` (1,760.55 kB, bundle principal): contém apenas 2 referências ao MapaCalor — a entrada no manifesto de assets e a chamada `React.lazy(() => import('./MapaCalor-...'))`
+- Preview local (`npm run preview`): app abre normalmente, sem tela branca
+
+### Lição
+
+Bibliotecas que dependem de globais (como `leaflet.heat → L`) devem ser isoladas em chunks lazy quando o bundler não garante ordem de execução. Verificar se o módulo usa `import L from "leaflet"` ou assume `window.L` antes de incluí-lo no bundle principal.
+
+---
+
+*Arquivo atualizado em: 2026-06-20*
