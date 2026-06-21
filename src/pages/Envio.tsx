@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import { linkWa, mascaraCelular } from "../lib/format";
 import Templates from "./Templates";
 import EnvioLista from "../components/EnvioLista";
@@ -33,6 +34,7 @@ export default function Envio({ perfil }: { perfil: Perfil }) {
 
 function EnvioFila({ perfil, onGerenciarTemplates }:
   { perfil: Perfil; onGerenciarTemplates: () => void }) {
+  const { t } = useTerminologia();
   const podeGerenciar = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const podeVerTodos = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const [modo, setModo] = useState<"normal" | "optin" | "lista">("normal");
@@ -311,7 +313,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
       </div>
 
       <p className="text-xs text-apoio">
-        {carregando ? "Carregando..." : `${listaFiltrada.length} contato(s) na fila`}
+        {carregando ? "Carregando..." : `${listaFiltrada.length} ${listaFiltrada.length === 1 ? t("contato") : t("contatos")} na fila`}
       </p>
 
       {/* Aviso sem template */}
@@ -387,7 +389,7 @@ function EnvioFila({ perfil, onGerenciarTemplates }:
         <div className="bg-white border border-linha rounded-xl p-5 text-center">
           <MessageCircle size={24} className="mx-auto mb-2 text-apoio" />
           <p className="text-sm text-apoio">
-            {modo === "normal" ? "Nenhum contato com consentimento (LGPD ok) neste filtro." : "Nenhum contato com opt-in pendente neste filtro."}
+            {modo === "normal" ? `Nenhum ${t("contato").toLowerCase()} com consentimento (LGPD ok) neste filtro.` : `Nenhum ${t("contato").toLowerCase()} com opt-in pendente neste filtro.`}
           </p>
         </div>
       )}

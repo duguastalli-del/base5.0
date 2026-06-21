@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import {
   AlertTriangle, Check, ChevronDown, ChevronUp, Copy,
   Image, Loader2, Tag as TagIcon, Building2, X,
@@ -27,6 +28,7 @@ function chunked<T>(arr: T[], n: number): T[][] {
 }
 
 export default function EnvioLista({ perfil }: { perfil: Perfil }) {
+  const { t } = useTerminologia();
   const [contatos, setContatos] = useState<Contato[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -297,7 +299,7 @@ export default function EnvioLista({ perfil }: { perfil: Perfil }) {
       <p className="text-xs text-apoio">
         {carregando
           ? "Carregando..."
-          : `${contatosFiltrados.length} contato(s) com LGPD ok · ${lotes.length} lista(s) de até ${TAMANHO_LOTE}`}
+          : `${contatosFiltrados.length} ${contatosFiltrados.length === 1 ? t("contato") : t("contatos")} com LGPD ok · ${lotes.length} lista(s) de até ${TAMANHO_LOTE}`}
       </p>
 
       {/* Campo mensagem */}
@@ -364,7 +366,7 @@ export default function EnvioLista({ perfil }: { perfil: Perfil }) {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-tinta">
                     Lista {idx + 1}
-                    <span className="text-apoio font-normal ml-1">({lote.length} contatos)</span>
+                    <span className="text-apoio font-normal ml-1">({lote.length} {lote.length === 1 ? t("contato") : t("contatos")})</span>
                   </span>
                   <button onClick={() => copiar(telefones, key)}
                     className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold bg-marca text-white active:opacity-80">
@@ -394,14 +396,14 @@ export default function EnvioLista({ perfil }: { perfil: Perfil }) {
             {registrando && <Loader2 size={14} className="animate-spin" />}
             {registrando
               ? "Registrando..."
-              : `Registrar envio de ${contatosFiltrados.length} contato(s)`}
+              : `Registrar envio de ${contatosFiltrados.length} ${contatosFiltrados.length === 1 ? t("contato") : t("contatos")}`}
           </button>
         )
       )}
 
       {!carregando && contatosFiltrados.length === 0 && (
         <div className="bg-white border border-linha rounded-xl p-5 text-center">
-          <p className="text-sm text-apoio">Nenhum contato com consentimento LGPD neste filtro.</p>
+          <p className="text-sm text-apoio">Nenhum {t("contato").toLowerCase()} com consentimento LGPD neste filtro.</p>
         </div>
       )}
     </div>

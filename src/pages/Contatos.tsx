@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import { mascaraCelular } from "../lib/format";
 import ModalImportar from "../components/ModalImportar";
 import DetalheContato from "../components/DetalheContato";
@@ -19,6 +20,7 @@ interface Contato {
 interface TagItem { id: string; nome: string; }
 
 export default function Contatos({ perfil }: { perfil: Perfil }) {
+  const { t } = useTerminologia();
   const [contatos, setContatos] = useState<Contato[]>([]);
   const [busca, setBusca] = useState("");
   const [cidadeF, setCidadeF] = useState("");
@@ -208,7 +210,7 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
       {/* Contador + toggle arquivados */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-apoio">
-          {carregando ? "Carregando..." : `${lista.length} contato(s)`}
+          {carregando ? "Carregando..." : `${lista.length} ${lista.length === 1 ? t("contato") : t("contatos")}`}
         </span>
         <button onClick={() => setMostrarArquivados((p) => !p)}
           className={`text-xs font-medium flex items-center gap-1 rounded-full px-2.5 py-1 border transition-colors ${mostrarArquivados ? "bg-alerta/10 border-amber-200 text-alerta" : "border-linha text-apoio bg-white"}`}>
