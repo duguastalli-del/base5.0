@@ -178,7 +178,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
       // Cabeçalho
       pdf.setFontSize(14);
       pdf.setTextColor(14, 94, 111);
-      pdf.text("Base 5.0 — Dashboard", 10, 12);
+      pdf.text(`Base 5.0 — Dashboard de ${t('contatos')}`, 10, 12);
       pdf.setFontSize(9);
       pdf.setTextColor(92, 107, 122);
       pdf.text(`Workspace: ${perfil.workspace_id}`, 10, 18);
@@ -361,7 +361,7 @@ export default function Inicio({ perfil }: { perfil: Perfil }) {
         <div className="bg-white border border-linha rounded-xl p-4 mt-3">
           <div className="flex items-center gap-2 mb-3">
             <Users size={15} className="text-marca" />
-            <span className="text-sm font-semibold text-tinta">Ranking de cadastradores</span>
+            <span className="text-sm font-semibold text-tinta">Ranking de {t('captadores').toLowerCase()}</span>
           </div>
           {ranking.length === 0 && <p className="text-xs text-apoio">Sem cadastros ainda.</p>}
           {ranking.map((r, i) => (

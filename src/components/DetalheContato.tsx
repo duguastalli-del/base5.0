@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
 import { linkWa, mascaraCelular } from "../lib/format";
+import { useTerminologia } from "../contexts/TerminologiaContext";
+import { ORIGENS_POR_VERTICAL } from "../lib/tags-por-vertical";
 import {
   X, Pencil, Archive, ArchiveRestore, Trash2, UserX,
   CheckCircle2, AlertTriangle, Loader2, Tag, MessageCircle,
@@ -14,8 +16,6 @@ interface Contato {
 
 interface TagItem { id: string; nome: string; }
 
-const ORIGENS = ["Porta a porta", "Evento", "Indicação", "Redes sociais"];
-
 export default function DetalheContato({
   perfil, contato, cidades, onFechar, onAlterado,
 }: {
@@ -25,6 +25,8 @@ export default function DetalheContato({
   onFechar: () => void;
   onAlterado: () => void;
 }) {
+  const { t, vertical } = useTerminologia();
+  const ORIGENS = ORIGENS_POR_VERTICAL[vertical];
   const [modo, setModo] = useState<"ver" | "editar">("ver");
   const [confirmacao, setConfirmacao] = useState<"excluir" | "anonimizar" | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -98,7 +100,7 @@ export default function DetalheContato({
     }
     await gravarAudit("editar_contato");
     setCarregando(false);
-    setSucesso("Contato atualizado!");
+    setSucesso(`${t('contato')} atualizado!`);
     setTimeout(() => { setSucesso(""); setModo("ver"); onAlterado(); }, 1200);
   };
 
@@ -145,7 +147,7 @@ export default function DetalheContato({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-linha">
           <span className="text-sm font-bold text-tinta">
-            {modo === "editar" ? "Editar contato" : "Detalhes do contato"}
+            {modo === "editar" ? `Editar ${t('contato')}` : `Detalhes do ${t('contato')}`}
           </span>
           <button onClick={onFechar} className="text-apoio p-1"><X size={18} /></button>
         </div>

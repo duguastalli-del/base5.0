@@ -14,6 +14,7 @@ export interface Terminologia {
   novo_contato: string;
   base_contatos: string;
   captador: string;
+  captadores: string;
   operacao: string;
 }
 
@@ -24,6 +25,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Apoiador',
     base_contatos: 'Base de Apoiadores',
     captador: 'Voluntário',
+    captadores: 'Voluntários',
     operacao: 'Campanha',
   },
   religioso: {
@@ -32,6 +34,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Membro',
     base_contatos: 'Comunidade',
     captador: 'Liderança',
+    captadores: 'Lideranças',
     operacao: 'Ação Pastoral',
   },
   imobiliario: {
@@ -40,6 +43,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Lead',
     base_contatos: 'Pipeline',
     captador: 'Corretor',
+    captadores: 'Corretores',
     operacao: 'Captação',
   },
   varejo: {
@@ -48,6 +52,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Cliente',
     base_contatos: 'Base de Clientes',
     captador: 'Vendedor',
+    captadores: 'Vendedores',
     operacao: 'Promoção',
   },
   pesquisa: {
@@ -56,6 +61,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Pesquisado',
     base_contatos: 'Amostra',
     captador: 'Pesquisador',
+    captadores: 'Pesquisadores',
     operacao: 'Pesquisa',
   },
   publicidade: {
@@ -64,6 +70,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Lead',
     base_contatos: 'Base',
     captador: 'Agente',
+    captadores: 'Agentes',
     operacao: 'Ativação',
   },
   ong: {
@@ -72,6 +79,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Apoiador',
     base_contatos: 'Rede de Apoio',
     captador: 'Voluntário',
+    captadores: 'Voluntários',
     operacao: 'Ação',
   },
   outro: {
@@ -80,6 +88,7 @@ export const TERMOS_PADRAO: Record<Vertical, Terminologia> = {
     novo_contato: 'Novo Contato',
     base_contatos: 'Base de Contatos',
     captador: 'Agente',
+    captadores: 'Agentes',
     operacao: 'Operação',
   },
 };

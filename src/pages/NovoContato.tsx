@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
 import { useTerminologia } from "../contexts/TerminologiaContext";
+import { TAGS_POR_VERTICAL, ORIGENS_POR_VERTICAL } from "../lib/tags-por-vertical";
 import { db, sincronizar, pendentes, salvarContactTags } from "../lib/db";
 import { mascaraCelular, paraE164, soDigitos } from "../lib/format";
 import { AlertTriangle, CheckCircle2, CloudOff, Plus } from "lucide-react";
 
-const TAGS = ["Apoiador", "Liderança", "Indeciso", "Comerciante", "Igreja", "Esporte"];
-const ORIGENS = ["Porta a porta", "Evento", "Indicação", "Redes sociais"];
-
 export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
   { perfil: Perfil; cidades: string[]; aoAdicionarCidade: (n: string) => void }) {
-  const { t } = useTerminologia();
+  const { t, vertical } = useTerminologia();
+  const TAGS = TAGS_POR_VERTICAL[vertical];
+  const ORIGENS = ORIGENS_POR_VERTICAL[vertical];
   const vazio = { nome: "", celular: "", cidade: "", bairro: "", tags: [] as string[], origem: "", obs: "", consentimento: false };
   const [f, setF] = useState(vazio);
   const [erro, setErro] = useState("");

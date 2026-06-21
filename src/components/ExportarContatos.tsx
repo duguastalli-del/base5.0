@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import { Download, FileSpreadsheet, Loader2, X } from "lucide-react";
 
 interface ContatoExp {
@@ -53,6 +54,7 @@ export default function ExportarContatos({
   tagsDisponiveis: TagItem[];
   onClose: () => void;
 }) {
+  const { t } = useTerminologia();
   const isAdmin = perfil.papel === "administrador";
   const podeVerTodos = isAdmin || perfil.papel === "coordenador";
 
@@ -91,7 +93,7 @@ export default function ExportarContatos({
         if (error) throw new Error(error.message);
         const lista = (data ?? []) as ContatoExp[];
         if (lista.length > 50_000) {
-          setErro("A base tem mais de 50.000 contatos. Use os filtros na tela de contatos antes de exportar.");
+          setErro(`A base tem mais de 50.000 ${t('contatos').toLowerCase()}. Use os filtros na tela de ${t('contatos').toLowerCase()} antes de exportar.`);
           return;
         }
         contatos = lista;
@@ -117,7 +119,7 @@ export default function ExportarContatos({
       }
 
       if (contatos.length === 0) {
-        setErro("Nenhum contato para exportar.");
+        setErro(`Nenhum ${t('contato').toLowerCase()} para exportar.`);
         return;
       }
 
@@ -164,7 +166,7 @@ export default function ExportarContatos({
 
       if (formato === "xlsx") {
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Contatos");
+        XLSX.utils.book_append_sheet(wb, ws, t('contatos'));
         XLSX.writeFile(wb, `contatos_${data}.xlsx`);
       } else {
         const csv = XLSX.utils.sheet_to_csv(ws);
@@ -212,7 +214,7 @@ export default function ExportarContatos({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileSpreadsheet size={18} className="text-marca" />
-            <h2 className="font-bold text-texto text-sm">Exportar contatos</h2>
+            <h2 className="font-bold text-texto text-sm">Exportar {t('contatos').toLowerCase()}</h2>
           </div>
           <button onClick={onClose}><X size={18} className="text-apoio" /></button>
         </div>
@@ -234,7 +236,7 @@ export default function ExportarContatos({
 
         {/* Escopo */}
         <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-apoio uppercase tracking-wide">Contatos a exportar</p>
+          <p className="text-xs font-semibold text-apoio uppercase tracking-wide">{t('contatos')} a exportar</p>
           <div className="flex gap-2">
             <button onClick={() => setScope("filtrados")}
               className={`flex-1 rounded-xl py-2.5 text-xs font-semibold border transition-colors ${
