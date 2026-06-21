@@ -6,7 +6,6 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { supabase, type Perfil } from "../lib/supabase";
 import { geocodificarLote, chaveGeo, type Coords } from "../lib/geocodificar";
-import { useTerminologia } from "../contexts/TerminologiaContext";
 import { Loader2, Layers, Tag, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 
 // Corrige ícone padrão do Leaflet com Vite
@@ -68,7 +67,6 @@ interface GrupoLocal {
 
 // ─── Página principal ────────────────────────────────────────────────────────
 export default function MapaCalor({ perfil }: { perfil: Perfil }) {
-  const { t } = useTerminologia();
   const [contatos, setContatos] = useState<ContatoMapa[]>([]);
   const [coordsMap, setCoordsMap] = useState<Map<string, Coords | null>>(new Map());
   const [geocodificando, setGeocodificando] = useState(false);
@@ -295,7 +293,7 @@ export default function MapaCalor({ perfil }: { perfil: Perfil }) {
                   <div className="text-xs">
                     <p className="font-semibold">{g.bairro || g.cidade}</p>
                     {g.bairro && <p className="text-gray-500">{g.cidade}</p>}
-                    <p className="mt-1 font-medium text-[#0E5E6F]">{g.total} {g.total !== 1 ? t('contatos') : t('contato')}</p>
+                    <p className="mt-1 font-medium text-[#0E5E6F]">{g.total} contato{g.total !== 1 ? "s" : ""}</p>
                   </div>
                 </Popup>
               </Marker>
@@ -357,7 +355,7 @@ export default function MapaCalor({ perfil }: { perfil: Perfil }) {
 
           {semLocalizacao > 0 && (
             <p className="text-[10px] text-apoio">
-              {semLocalizacao} {semLocalizacao !== 1 ? t('contatos') : t('contato')} sem localização geocodificada ({pctSemLocal}% do filtro) — agrupados como "Sem local".
+              {semLocalizacao} contato{semLocalizacao !== 1 ? "s" : ""} sem localização geocodificada ({pctSemLocal}% do filtro) — agrupados como "Sem local".
             </p>
           )}
         </div>

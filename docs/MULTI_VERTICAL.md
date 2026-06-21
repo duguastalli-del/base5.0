@@ -149,7 +149,6 @@ Todas as telas do sistema agora usam `useTerminologia()`:
 | `src/components/ExportarContatos.tsx` | título, aba XLSX, escopo, mensagens de erro |
 | `src/components/ModalImportar.tsx` | título, botão de importação |
 | `src/components/EnvioLista.tsx` | contador, lote, botão registrar, estado vazio |
-| `src/pages/MapaCalor.tsx` | texto do Popup e rodapé de sem-localização |
 
 ### Tags e origens por vertical (`src/lib/tags-por-vertical.ts`)
 
@@ -204,3 +203,17 @@ Antoniassi 2026 (vertical='politica') já tem settings → fluxo 100% inalterado
 - Primeiro cliente não-político em produção
 - UI de edição de vocabulário personalizado (`workspace_settings.vocabulario`)
 - Paleta de cores por vertical aplicada ao CSS (tematização real)
+
+---
+
+## Limitações conhecidas
+
+### MapaCalor.tsx não usa useTerminologia (BUG-06)
+
+`src/pages/MapaCalor.tsx` exibe "contato/contatos" em português genérico, independente do vertical. Isso é intencional após BUG-06 (2026-06-21).
+
+**Causa:** `MapaCalor.tsx` é carregado via `React.lazy()` em App.tsx (correção do BUG-05). Adicionar `import { useTerminologia }` no chunk lazy criava uma dependência ESM circular com o bundle principal, causando tela branca total em runtime.
+
+**Regra derivada:** componentes em `React.lazy()` não podem importar do TerminologiaContext (nem de nenhum outro módulo que resida no bundle principal e seja referenciado de volta pelo bundle principal via dynamic import).
+
+Ver `docs/BUGS_RESOLVIDOS.md#BUG-06` para diagnóstico completo.
