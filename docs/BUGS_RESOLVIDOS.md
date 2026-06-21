@@ -233,4 +233,39 @@ Bibliotecas que dependem de globais (como `leaflet.heat → L`) devem ser isolad
 
 ---
 
-*Arquivo atualizado em: 2026-06-20*
+## BUG-07 — Mapa de Calor desativado (bug persistente em produção e incognito)
+
+**Data:** 2026-06-21
+**Decisão:** Eduardo — feature não-core, desativada temporariamente
+**Ação:** botão "Mapa" removido do header; `MapaCalor.tsx` mantido como código morto
+
+### Sintoma
+
+Tela branca total ao tocar em "Mapa" no header, inclusive em janela anônima no iPhone após rollback completo para commit 125c519 (último estado funcional confirmado).
+
+### Histórico de bugs anteriores nesta feature
+
+- **BUG-05 (2026-06-20):** `leaflet.heat` crashava no bundle único (Rolldown colocava `L.HeatLayer` antes de `window.L`). Fix: `React.lazy()` + `Suspense` isolou o chunk.
+- **BUG-06 (2026-06-21):** Multi-Vertical V2 adicionou `import { useTerminologia }` em `MapaCalor.tsx`, criando dependência ESM circular entre chunk lazy e bundle principal. Fix: removido. Mas crash persistiu.
+- **BUG-07 (2026-06-21):** Após rollback completo para 125c519, tela branca ainda ocorre em incognito no iPhone. Causa indeterminada — as três hipóteses conhecidas foram descartadas.
+
+### Hipóteses descartadas
+
+1. **Cache PWA / service worker:** rollback para 125c519 regenerou sw.js com hashes de 125c519. Testado em incognito (sem SW cache). Crash persistiu.
+2. **Circular ESM:** removido no BUG-06 fix. Artefato de build confirmou import signatures idênticos ao estado funcional.
+3. **TerminologiaProvider interferindo com React.lazy:** provider usa `useState(fallback)` + `useEffect` async. Renderiza children imediatamente. Não bloqueia. Além disso, foi revertido junto com o rollback.
+
+### Solução adotada
+
+Esconder acesso à feature (não excluir código):
+- `src/App.tsx`: removidos `lazy`, `Suspense`, `const MapaCalor`, import `MapPin`, botão "Mapa" do header, bloco `{aba === "mapa" && <Suspense>...}`
+- `src/pages/MapaCalor.tsx`: intacto em disco (código morto)
+- `docs/ROADMAP.md`: Etapa 10 marcada como 🔴 DESATIVADO
+
+### Retomada futura
+
+Avaliar Mapbox GL JS ou Google Maps como substitutos ao react-leaflet v5 + leaflet.heat. Ou investigar em sessão dedicada com DevTools do Safari para capturar o erro exato no iPhone.
+
+---
+
+*Arquivo atualizado em: 2026-06-21*
