@@ -66,8 +66,8 @@
 | Fase | Status | O que foi feito |
 |---|---|---|
 | V1 — Fundação técnica | ✅ Completo (2026-06-20) | `workspace_settings` (migration 000009, RLS, retrocompat.) · `src/lib/terminologia.ts` (8 verticais) · `src/contexts/TerminologiaContext.tsx` (hook + cache + fallback) · 4 telas adaptadas: Contatos, Inicio, Envio, NovoContato + Shell h1s |
-| V2 — Todas as telas | ⬜ Pendente | Adaptar telas restantes (DetalheContato, ExportarContatos, ModalImportar, EnvioLista, Agenda, MapaCalor, PDF export) · TAGS e ORIGENS padrão por vertical |
-| V3 — Onboarding visual | ⬜ Pendente | Tela de escolha de vertical ao criar workspace · UI de vocabulário customizado · Cores por vertical |
+| V2 — Todas as telas | ✅ Completo (2026-06-21) | 9 arquivos adaptados (DetalheContato, ExportarContatos, ModalImportar, EnvioLista, MapaCalor, Inicio ×2, NovoContato) · `src/lib/tags-por-vertical.ts` com TAGS e ORIGENS para os 8 verticais · chave `captadores` adicionada à interface `Terminologia` |
+| V3 — Onboarding visual | ✅ Completo (2026-06-21) | `src/pages/EscolherVertical.tsx`: 8 cards + personalização (nome + cor) · `App.tsx`: detecção de `hasSettings` + tela de espera para não-admins |
 | V4 — Capacitor + Lojas | ⬜ Pendente | Google Play + App Store · Primeiro cliente não-político em produção |
 
 Ver `docs/MULTI_VERTICAL.md` para documentação completa.

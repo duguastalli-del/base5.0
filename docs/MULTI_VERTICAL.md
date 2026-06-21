@@ -134,51 +134,73 @@ O hook mescla: `TERMOS_PADRAO[vertical]` + `vocabulario`. Qualquer chave present
 
 ---
 
-## Limitações V1 — telas adaptadas vs. não adaptadas
+## Telas adaptadas (V2 — completo)
 
-### Telas adaptadas (V1 — esta sessão)
+Todas as telas do sistema agora usam `useTerminologia()`:
 
-| Arquivo | O que muda |
+| Arquivo | O que adapta |
 |---|---|
-| `src/App.tsx` (Shell) | h1 "Base de Apoiadores" (aba contatos) · h1 "Novo Apoiador" (aba novo) |
+| `src/App.tsx` (Shell) | h1 "Base de Apoiadores" / "Novo Apoiador" |
 | `src/pages/Contatos.tsx` | contador "X Apoiadores" |
-| `src/pages/Inicio.tsx` | KPI "Total de Apoiadores" |
-| `src/pages/Envio.tsx` | contador "X Apoiadores na fila" · mensagens de estado vazio |
-| `src/pages/NovoContato.tsx` | botão "Salvar Apoiador" · toast "Apoiador salvo na base!" |
+| `src/pages/Inicio.tsx` | KPI total, "Ranking de voluntários", cabeçalho PDF |
+| `src/pages/Envio.tsx` | contador na fila, estados vazios |
+| `src/pages/NovoContato.tsx` | botão salvar, toast, TAGS e ORIGENS dinâmicas por vertical |
+| `src/components/DetalheContato.tsx` | título do modal, toast, ORIGENS dinâmicas |
+| `src/components/ExportarContatos.tsx` | título, aba XLSX, escopo, mensagens de erro |
+| `src/components/ModalImportar.tsx` | título, botão de importação |
+| `src/components/EnvioLista.tsx` | contador, lote, botão registrar, estado vazio |
+| `src/pages/MapaCalor.tsx` | texto do Popup e rodapé de sem-localização |
 
-### Telas NÃO adaptadas (roadmap V2)
+### Tags e origens por vertical (`src/lib/tags-por-vertical.ts`)
 
-| Arquivo | O que precisa mudar |
-|---|---|
-| `src/pages/NovoContato.tsx` | TAGS e ORIGENS hardcoded para política |
-| `src/components/DetalheContato.tsx` | labels de campos e textos de ações |
-| `src/components/ExportarContatos.tsx` | cabeçalho do XLSX/CSV |
-| `src/components/ModalImportar.tsx` | textos de instrução |
-| `src/components/EnvioLista.tsx` | textos da lista de transmissão |
-| `src/pages/Agenda.tsx` | "Agenda da equipe" no h1 |
-| `src/pages/MapaCalor.tsx` | legenda do painel de estatísticas |
-| `src/pages/Inicio.tsx` | título "Ranking de cadastradores" → t('captador') |
-| PDF export (Inicio.tsx) | cabeçalho do PDF |
+`TAGS_POR_VERTICAL` e `ORIGENS_POR_VERTICAL` definem chips específicos para cada um dos 8 verticais. `NovoContato.tsx` e `DetalheContato.tsx` usam `vertical` do hook para selecionar o conjunto correto.
+
+### Chave `captadores` (plural)
+
+Adicionada à interface `Terminologia` e ao `TERMOS_PADRAO` para todos os 8 verticais, usada em "Ranking de voluntários" (Inicio.tsx).
+
+---
+
+## Onboarding V3 — EscolherVertical
+
+`src/pages/EscolherVertical.tsx` é exibida quando um workspace não tem `workspace_settings` (novo workspace) e o usuário é administrador.
+
+### Fluxo
+
+1. **Etapa 1:** Grid 2×4 com emoji + nome + descrição de cada vertical. Administrador seleciona e avança.
+2. **Etapa 2 (opcional):** Nome de exibição do workspace + paleta de 6 cores. Pode pular.
+3. **Confirmação:** INSERT em `workspace_settings` + audit log + `window.location.href = "/"` para garantir limpeza do cache de terminologia.
+
+### Detecção em App.tsx
+
+`App.tsx` mantém estado `hasSettings: boolean | undefined`. Após carregar o perfil, consulta `workspace_settings.workspace_id`. Se `false`:
+- Admin → renderiza `<EscolherVertical />`
+- Não-admin → tela de espera "Aguardando administrador configurar o workspace"
+
+Antoniassi 2026 (vertical='politica') já tem settings → fluxo 100% inalterado.
 
 ---
 
 ## Roadmap Multi-Vertical
 
-### V1 (2026-06-20 — esta sessão)
+### V1 (2026-06-20) ✅
 - Tabela `workspace_settings` com RLS
 - Hook `useTerminologia()` + `TerminologiaProvider`
 - 4 telas adaptadas: Contatos, Inicio, Envio, NovoContato + Shell h1s
 
-### V2 (próxima sessão)
-- Adaptar todas as telas restantes (ver lista acima)
-- Adaptar TAGS e ORIGENS padrão por vertical (NovoContato.tsx)
-- Adaptar cabeçalho do PDF e do XLSX exportado
+### V2 (2026-06-21) ✅
+- Todas as telas adaptadas (ver tabela acima)
+- TAGS e ORIGENS dinâmicas por vertical (`tags-por-vertical.ts`)
+- Chave `captadores` adicionada à interface Terminologia
+- Cabeçalho do PDF e aba do XLSX adaptados
 
-### V3
-- Tela de onboarding para escolha de vertical ao criar workspace
-- UI de edição de vocabulário personalizado (workspace_settings.vocabulario)
-- Paleta de cores por vertical (cor_primaria / cor_secundaria)
+### V3 (2026-06-21) ✅
+- `EscolherVertical.tsx`: onboarding de 2 etapas (vertical + personalização opcional)
+- `App.tsx`: detecção de workspace sem settings + roteamento para onboarding
+- Tela de espera para não-admins em workspaces sem configuração
 
-### V4
+### V4 🟡
 - Capacitor + Google Play + App Store
 - Primeiro cliente não-político em produção
+- UI de edição de vocabulário personalizado (`workspace_settings.vocabulario`)
+- Paleta de cores por vertical aplicada ao CSS (tematização real)
