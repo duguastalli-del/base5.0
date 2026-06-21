@@ -6,14 +6,12 @@ import Entrar from "./pages/Entrar";
 import CriarCampanha from "./pages/CriarCampanha";
 import Convite from "./pages/Convite";
 import RedefinirSenha from "./pages/RedefinirSenha";
-import EscolherVertical from "./pages/EscolherVertical";
 import Inicio from "./pages/Inicio";
 import Contatos from "./pages/Contatos";
 import NovoContato from "./pages/NovoContato";
 import Envio from "./pages/Envio";
 import Agenda from "./pages/Agenda";
 import WhatsAppHub from "./pages/WhatsAppHub";
-import { TerminologiaProvider, useTerminologia } from "./contexts/TerminologiaContext";
 
 // Leaflet + leaflet.heat precisam ficar em chunk separado do bundle principal:
 // leaflet.heat usa `L` como global e crashava quando o Rolldown a colocava
@@ -25,7 +23,6 @@ const CIDADES_PADRAO = ["Santa Bárbara d'Oeste", "Americana", "Nova Odessa", "S
 
 function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
   const [aba, setAba] = useState("inicio");
-  const { t } = useTerminologia();
   const [cidades, setCidades] = useState<string[]>(() => {
     const salvas = localStorage.getItem("base50-cidades");
     return salvas ? JSON.parse(salvas) : CIDADES_PADRAO;
@@ -51,8 +48,8 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
 
   const abas = [
     { id: "inicio", rotulo: "Início", icone: LayoutDashboard, titulo: "Visão geral" },
-    { id: "contatos", rotulo: "Contatos", icone: Users, titulo: t('base_contatos') },
-    { id: "novo", rotulo: "Novo", icone: UserPlus, titulo: t('novo_contato') },
+    { id: "contatos", rotulo: "Contatos", icone: Users, titulo: "Base de contatos" },
+    { id: "novo", rotulo: "Novo", icone: UserPlus, titulo: "Novo contato" },
     { id: "envio", rotulo: "Envio", icone: Send, titulo: "Envio assistido" },
     { id: "agenda", rotulo: "Agenda", icone: CalendarDays, titulo: "Agenda da equipe" },
   ];
@@ -144,26 +141,8 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
 
 export default function App() {
   const [perfil, setPerfil] = useState<Perfil | null | undefined>(undefined);
-  const [hasSettings, setHasSettings] = useState<boolean | undefined>(undefined);
 
-  const verificarSettings = async (p: Perfil) => {
-    const { data } = await supabase
-      .from("workspace_settings")
-      .select("workspace_id")
-      .eq("workspace_id", p.workspace_id)
-      .single();
-    setHasSettings(data !== null);
-  };
-
-  const carregarPerfil = async () => {
-    const p = await meuPerfil();
-    setPerfil(p);
-    if (p) {
-      await verificarSettings(p);
-    } else {
-      setHasSettings(undefined);
-    }
-  };
+  const carregarPerfil = () => meuPerfil().then(setPerfil);
 
   useEffect(() => {
     carregarPerfil();
@@ -171,47 +150,20 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const sair = async () => {
-    await supabase.auth.signOut();
-    setPerfil(null);
-    setHasSettings(undefined);
-  };
+  const sair = async () => { await supabase.auth.signOut(); setPerfil(null); };
 
-  if (perfil === undefined || (perfil !== null && hasSettings === undefined))
+  if (perfil === undefined)
     return <div className="min-h-screen flex items-center justify-center bg-fundo"><p className="text-sm text-apoio">Carregando...</p></div>;
 
-  // Novo workspace sem configuração
-  if (perfil && hasSettings === false) {
-    if (perfil.papel === "administrador") {
-      return (
-        <TerminologiaProvider perfil={perfil}>
-          <EscolherVertical perfil={perfil} onSair={sair} />
-        </TerminologiaProvider>
-      );
-    }
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-fundo gap-4 px-6">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black bg-marca">B5</div>
-        <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-tinta">Workspace em configuração</p>
-          <p className="text-xs text-apoio">Aguardando o administrador configurar o tipo de operação.</p>
-        </div>
-        <button onClick={sair} className="text-xs text-apoio underline">Sair</button>
-      </div>
-    );
-  }
-
   return (
-    <TerminologiaProvider perfil={perfil ?? null}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/entrar" element={perfil ? <Navigate to="/" /> : <Entrar />} />
-          <Route path="/criar" element={perfil ? <Navigate to="/" /> : <CriarCampanha />} />
-          <Route path="/convite/:token" element={<Convite />} />
-          <Route path="/redefinir" element={<RedefinirSenha />} />
-          <Route path="/" element={perfil ? <Shell perfil={perfil} sair={sair} /> : <Navigate to="/entrar" />} />
-        </Routes>
-      </BrowserRouter>
-    </TerminologiaProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/entrar" element={perfil ? <Navigate to="/" /> : <Entrar />} />
+        <Route path="/criar" element={perfil ? <Navigate to="/" /> : <CriarCampanha />} />
+        <Route path="/convite/:token" element={<Convite />} />
+        <Route path="/redefinir" element={<RedefinirSenha />} />
+        <Route path="/" element={perfil ? <Shell perfil={perfil} sair={sair} /> : <Navigate to="/entrar" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

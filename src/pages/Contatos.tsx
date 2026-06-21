@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
-import { useTerminologia } from "../contexts/TerminologiaContext";
 import { mascaraCelular } from "../lib/format";
 import ModalImportar from "../components/ModalImportar";
 import DetalheContato from "../components/DetalheContato";
@@ -37,7 +36,6 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
   const podeImportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const podeExportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const [exportar, setExportar] = useState(false);
-  const { t } = useTerminologia();
 
   useEffect(() => {
     supabase.from("tags").select("id, nome").then(({ data }) =>
@@ -210,7 +208,7 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
       {/* Contador + toggle arquivados */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-apoio">
-          {carregando ? "Carregando..." : `${lista.length} ${t('contatos')}`}
+          {carregando ? "Carregando..." : `${lista.length} contato(s)`}
         </span>
         <button onClick={() => setMostrarArquivados((p) => !p)}
           className={`text-xs font-medium flex items-center gap-1 rounded-full px-2.5 py-1 border transition-colors ${mostrarArquivados ? "bg-alerta/10 border-amber-200 text-alerta" : "border-linha text-apoio bg-white"}`}>
