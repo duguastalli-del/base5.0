@@ -8,6 +8,7 @@ import ExportarContatos from "../components/ExportarContatos";
 import {
   Search, Tag, CheckCircle2, AlertTriangle, X,
   Building2, Smartphone, Archive, Download,
+  ShieldCheck, Loader2,
 } from "lucide-react";
 
 interface Contato {
@@ -37,7 +38,14 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
 
   const podeImportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const podeExportar = perfil.papel === "administrador" || perfil.papel === "coordenador";
+  const podeMarcalLgpd = perfil.papel === "administrador" || perfil.papel === "coordenador";
   const [exportar, setExportar] = useState(false);
+
+  // Estado para marcar LGPD em massa
+  const [showConfirmLgpd, setShowConfirmLgpd] = useState(false);
+  const [marcandoLgpd, setMarcandoLgpd] = useState(false);
+  const [erroLgpd, setErroLgpd] = useState("");
+  const [toastLgpd, setToastLgpd] = useState("");
 
   useEffect(() => {
     supabase.from("tags").select("id, nome").then(({ data }) =>
@@ -104,6 +112,9 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
     return true;
   });
 
+  // Contatos visíveis que ainda não têm LGPD ok
+  const semLgpd = lista.filter((c) => c.consent !== "sim");
+
   const alternarTagFiltro = (id: string) =>
     setTagsFiltro((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
 
@@ -113,6 +124,62 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
     `shrink-0 rounded-full px-3 py-1 text-xs font-medium ${ativo ? "bg-marca text-white" : "bg-white text-apoio border border-linha"}`;
 
   const temFiltro = !!(cidadeF || bairroF || consentF || origemF || busca || tagsFiltro.length);
+
+  // Marcar LGPD em massa
+  const marcarLgpdEmMassa = async () => {
+    if (semLgpd.length === 0 || !podeMarcalLgpd || marcandoLgpd) return;
+    setMarcandoLgpd(true);
+    setErroLgpd("");
+
+    const ids = semLgpd.map((c) => c.id);
+    const quantidade = ids.length;
+
+    try {
+      // Audit log PRIMEIRO — se falhar, aborta sem tocar nos dados
+      const { error: auditError } = await supabase.from("audit_logs").insert({
+        workspace_id: perfil.workspace_id,
+        usuario_id: perfil.id,
+        acao: "marcar_lgpd_em_massa",
+        entidade: "contacts",
+        detalhes: JSON.stringify({
+          quantidade,
+          filtros_aplicados: {
+            cidade: cidadeF || null,
+            bairro: bairroF || null,
+            tags: tagsFiltro.length > 0 ? tagsFiltro : null,
+            busca: busca || null,
+            consent: consentF || null,
+            origem: origemF || null,
+          },
+          contact_ids: ids,
+          justificativa_implicita: "consent verbal prévio fora do app",
+        }),
+      });
+
+      if (auditError) throw new Error("Falha no audit log: " + auditError.message);
+
+      // UPDATE em massa — apenas contatos visíveis sem LGPD ok
+      const { error: updateError } = await supabase
+        .from("contacts")
+        .update({ consent: "sim" })
+        .in("id", ids)
+        .eq("workspace_id", perfil.workspace_id);
+
+      if (updateError) throw new Error("Falha ao atualizar: " + updateError.message);
+
+      setShowConfirmLgpd(false);
+      const plural = quantidade !== 1;
+      setToastLgpd(
+        `${quantidade} ${plural ? t("contatos") : t("contato")} marcado${plural ? "s" : ""} como LGPD ok`
+      );
+      setTimeout(() => setToastLgpd(""), 4000);
+      await carregar();
+    } catch (e) {
+      setErroLgpd("Erro: " + (e as Error).message);
+    } finally {
+      setMarcandoLgpd(false);
+    }
+  };
 
   return (
     <div className="space-y-3 pb-4">
@@ -207,6 +274,21 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
         </div>
       )}
 
+      {/* Barra de ações em massa — só para admin/coord e só se há contatos sem LGPD ok */}
+      {podeMarcalLgpd && !carregando && semLgpd.length > 0 && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 space-y-2.5">
+          <p className="text-[10px] font-bold text-apoio uppercase tracking-wide">Ações em massa</p>
+          <p className="text-xs text-tinta">
+            {semLgpd.length} {semLgpd.length === 1 ? t("contato") : t("contatos")} sem LGPD ok {semLgpd.length === 1 ? "visível" : "visíveis"}
+          </p>
+          <button
+            onClick={() => { setErroLgpd(""); setShowConfirmLgpd(true); }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-ok border border-green-300 bg-white active:bg-green-50 transition-colors">
+            <ShieldCheck size={15} /> Marcar todos como LGPD ok
+          </button>
+        </div>
+      )}
+
       {/* Contador + toggle arquivados */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-apoio">
@@ -230,7 +312,7 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
 
       {lista.map((c) => {
         const tagsDoContato = (contatoTags[c.id] ?? [])
-          .map((tid) => tagsDisponiveis.find((t) => t.id === tid)?.nome)
+          .map((tid) => tagsDisponiveis.find((tg) => tg.id === tid)?.nome)
           .filter(Boolean) as string[];
         const arquivado = c.status === "arquivado";
 
@@ -289,6 +371,76 @@ export default function Contatos({ perfil }: { perfil: Perfil }) {
           onFechar={() => setDetalhe(null)}
           onAlterado={() => { carregar(); setDetalhe(null); }}
         />
+      )}
+
+      {/* Modal de confirmação — marcar LGPD em massa */}
+      {showConfirmLgpd && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => { if (!marcandoLgpd) setShowConfirmLgpd(false); }}>
+          <div
+            className="bg-white rounded-t-2xl w-full max-w-md p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-texto text-sm">Confirmar consent em massa</h2>
+              <button onClick={() => { if (!marcandoLgpd) setShowConfirmLgpd(false); }}>
+                <X size={18} className="text-apoio" />
+              </button>
+            </div>
+
+            <p className="text-sm text-tinta leading-relaxed">
+              Você vai marcar{" "}
+              <b>{semLgpd.length} {semLgpd.length === 1 ? t("contato") : t("contatos")}</b>{" "}
+              como <b>"LGPD ok"</b> (consent='sim').
+            </p>
+
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 space-y-1.5">
+              <p className="text-xs font-bold text-alerta flex items-center gap-1.5">
+                <AlertTriangle size={13} /> ATENÇÃO LEGAL
+              </p>
+              <p className="text-xs text-alerta leading-relaxed">
+                Use APENAS para contatos que já te deram consent verbal/pessoal fora do app
+                (família, amigos, conhecidos diretos).
+              </p>
+              <p className="text-xs text-alerta leading-relaxed">
+                Esta ação será registrada no audit log com data, hora e quantidade.
+              </p>
+            </div>
+
+            {erroLgpd && (
+              <p className="text-xs text-erro bg-red-50 rounded-xl p-3 flex items-start gap-1.5">
+                <AlertTriangle size={12} className="shrink-0 mt-0.5" /> {erroLgpd}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setShowConfirmLgpd(false)}
+                disabled={marcandoLgpd}
+                className="flex-1 rounded-xl py-3 text-sm font-semibold text-apoio border border-linha bg-white disabled:opacity-50">
+                Cancelar
+              </button>
+              <button
+                onClick={marcarLgpdEmMassa}
+                disabled={marcandoLgpd}
+                className="flex-1 rounded-xl py-3 text-sm font-bold text-white bg-marca disabled:opacity-50 flex items-center justify-center gap-2">
+                {marcandoLgpd
+                  ? <><Loader2 size={14} className="animate-spin" /> Marcando…</>
+                  : `Sim, marcar ${semLgpd.length} como LGPD ok`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast de sucesso */}
+      {toastLgpd && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 pointer-events-none">
+          <div className="bg-ok text-white rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2 shadow-lg">
+            <CheckCircle2 size={16} /> {toastLgpd}
+          </div>
+        </div>
       )}
     </div>
   );
