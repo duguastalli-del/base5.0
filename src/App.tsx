@@ -94,17 +94,17 @@ function Shell({ perfil, sair }: { perfil: Perfil; sair: () => void }) {
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-2 pb-3 pt-2 bg-white border-t border-linha">
-          <div className="flex justify-around">
+          <div className="flex justify-around items-end">
             {abas.map((a) => {
               const Ic = a.icone;
               const ativo = aba === a.id;
-              const destaque = a.id === "novo";
               return (
                 <button key={a.id} onClick={() => setAba(a.id)}
-                  className="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"
-                  style={destaque ? { background: "#0E5E6F", color: "#fff", padding: "8px 14px", marginTop: -14, boxShadow: "0 4px 12px rgba(14,94,111,.35)" } : {}}>
-                  <Ic size={19} color={destaque ? "#fff" : ativo ? "#0E5E6F" : "#5C6B7A"} />
-                  <span className="text-[10px] font-semibold" style={{ color: destaque ? "#fff" : ativo ? "#0E5E6F" : "#5C6B7A" }}>{a.rotulo}</span>
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${
+                    ativo ? "bg-[#0E5E6F]/10" : "hover:bg-fundo"
+                  }`}>
+                  <Ic size={19} color={ativo ? "#0E5E6F" : "#9CA3AF"} />
+                  <span className="text-[10px] font-semibold" style={{ color: ativo ? "#0E5E6F" : "#9CA3AF" }}>{a.rotulo}</span>
                 </button>
               );
             })}
