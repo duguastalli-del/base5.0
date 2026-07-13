@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply text-slate-800;
+}
+
+.divisor-campanha {
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    #d61f2c 0,
+    #d61f2c 33.33%,
+    #ffffff 33.33%,
+    #ffffff 66.66%,
+    #d61f2c 66.66%,
+    #d61f2c 100%
+  );
+}
