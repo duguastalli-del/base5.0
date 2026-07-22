@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase, type Perfil } from "../lib/supabase";
+import { useTerminologia } from "../contexts/TerminologiaContext";
 import { normalizarImportado, mascaraCelular } from "../lib/format";
 import { Smartphone, Users, FileSpreadsheet, X, Loader2, CheckCircle2, AlertTriangle, Upload } from "lucide-react";
 
@@ -29,6 +30,7 @@ const FLAG_GOOGLE = "b50_import_google";
 
 export default function ModalImportar({ perfil, cidades, onClose, onImportado }:
   { perfil: Perfil; cidades: string[]; onClose: () => void; onImportado: () => void }) {
+  const { t } = useTerminologia();
   const [aba, setAba] = useState<Aba>("telefone");
   const [existentes, setExistentes] = useState<Set<string>>(new Set());
   const [lista, setLista] = useState<Importavel[]>([]);
@@ -224,7 +226,7 @@ export default function ModalImportar({ perfil, cidades, onClose, onImportado }:
       <div className="w-full sm:max-w-md bg-fundo rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-linha">
-          <span className="text-sm font-bold text-tinta">Importar contatos</span>
+          <span className="text-sm font-bold text-tinta">Importar {t("contatos").toLowerCase()}</span>
           <button onClick={onClose} aria-label="Fechar" className="text-apoio"><X size={18} /></button>
         </div>
 
@@ -366,7 +368,7 @@ export default function ModalImportar({ perfil, cidades, onClose, onImportado }:
             <button onClick={importar} disabled={totalSelecionados === 0 || importando}
               className="w-full rounded-xl py-3.5 text-sm font-bold text-white bg-marca disabled:opacity-50 flex items-center justify-center gap-2">
               {importando && <Loader2 size={16} className="animate-spin" />}
-              {importando ? "Importando..." : `Importar ${totalSelecionados} contato(s)`}
+              {importando ? "Importando..." : `Importar ${totalSelecionados} ${totalSelecionados === 1 ? t("contato") : t("contatos")}`}
             </button>
           </div>
         )}

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { supabase, type Perfil } from "../lib/supabase";
-import { db, sincronizar, pendentes } from "../lib/db";
+import { db, sincronizar, pendentes, salvarContactTags } from "../lib/db";
 import { mascaraCelular, paraE164, soDigitos } from "../lib/format";
 import { AlertTriangle, CheckCircle2, CloudOff, Plus } from "lucide-react";
-
-const TAGS = ["Apoiador", "Liderança", "Indeciso", "Comerciante", "Igreja", "Esporte"];
-const ORIGENS = ["Porta a porta", "Evento", "Indicação", "Redes sociais"];
+import { useTerminologia } from "../contexts/TerminologiaContext";
+import { TAGS_POR_VERTICAL, ORIGENS_POR_VERTICAL } from "../lib/tags-por-vertical";
 
 export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
   { perfil: Perfil; cidades: string[]; aoAdicionarCidade: (n: string) => void }) {
+  const { t, vertical } = useTerminologia();
+  const TAGS = TAGS_POR_VERTICAL[vertical];
+  const ORIGENS = ORIGENS_POR_VERTICAL[vertical];
   const vazio = { nome: "", celular: "", cidade: "", bairro: "", tags: [] as string[], origem: "", obs: "", consentimento: false };
   const [f, setF] = useState(vazio);
   const [erro, setErro] = useState("");
@@ -51,12 +53,15 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
     };
 
     if (navigator.onLine) {
-      const { error } = await supabase.from("contacts").insert({
+      const { data: contactData, error } = await supabase.from("contacts").insert({
         ...registro, workspace_id: perfil.workspace_id, criado_por: perfil.id,
-      });
+      }).select("id").single();
       if (error) {
         if (error.code === "23505") return setErro("Este número já está cadastrado na base.");
         return setErro("Falha ao salvar: " + error.message);
+      }
+      if (contactData?.id && f.tags.length > 0) {
+        await salvarContactTags(contactData.id as string, f.tags, perfil.workspace_id);
       }
       setSalvo("online");
     } else {
@@ -93,7 +98,7 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
       {salvo && (
         <div className="rounded-xl p-3 bg-green-50 border border-green-200 flex items-center gap-2 text-sm font-medium text-ok">
           <CheckCircle2 size={16} />
-          {salvo === "online" ? "Contato salvo na base!" : "Salvo no aparelho — sincroniza quando a internet voltar."}
+          {salvo === "online" ? `${t("contato")} salvo na base!` : "Salvo no aparelho — sincroniza quando a internet voltar."}
         </div>
       )}
 
@@ -177,7 +182,7 @@ export default function NovoContato({ perfil, cidades, aoAdicionarCidade }:
       {erro && <p className="text-xs flex items-center gap-1.5 font-medium text-erro"><AlertTriangle size={13} /> {erro}</p>}
 
       <button onClick={salvar} className="w-full rounded-xl py-3.5 text-sm font-bold text-white bg-marca">
-        Salvar contato
+        Salvar {t("contato").toLowerCase()}
       </button>
     </div>
   );

@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 body { background: #F2F4F6; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+/* Leaflet */
+.leaflet-container { border-radius: 0.75rem; }
+

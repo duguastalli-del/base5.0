@@ -3,7 +3,7 @@
 **Última atualização:** 2026-06-19
 **Método:** leitura direta dos arquivos-fonte do repositório (não memória de sessão).
 
-> ✅ Schema versionado em `supabase/migrations/` (8 arquivos, criados em 2026-06-19). Ver `docs/SCHEMA.md` e `docs/SETUP_NOVO_PROJETO.md`. Campos com `-- TODO` requerem confirmação no Supabase Dashboard antes de usar em novo projeto.
+> ⚠️ O repositório **não contém arquivos `.sql`**. Todo o backend (tabelas, RLS, triggers, funções, views) foi aplicado diretamente no Supabase. O estado de "em produção" para o banco só pode ser verificado abrindo o Supabase Dashboard — não pelo repo.
 
 ---
 
@@ -11,7 +11,7 @@
 
 | # | Etapa | Status | Evidência no repo |
 |---|-------|--------|-------------------|
-| 1 | Banco + RLS + LGPD | ✅ Schema versionado | 8 migrations em `supabase/migrations/` criadas em 2026-06-19 por leitura de código. Cobre: workspaces, profiles, invites, contacts, tags, contact_tags, audit_logs, message_templates, send_logs, imports, events, whatsapp_api_config, whatsapp_templates, whatsapp_disparos, whatsapp_mensagens, views v_ranking_cadastradores/v_contatos_por_cidade, RPCs painel_resumo/criar_convite/ver_convite/anonimizar_contato/incrementar_disparo_contador. Documentado em `docs/SCHEMA.md`. Campos com `-- TODO` requerem confirmação no Dashboard. |
+| 1 | Banco + RLS + LGPD | ❓ Não versionado | Sem `.sql`. Frontend consome `profiles`, `contacts`, `tags`, `contact_tags`, `message_templates`, `send_logs`, `imports`, `audit_logs`, RPCs `meu_workspace`, `painel_resumo`, `criar_convite`, `ver_convite`, `incrementar_disparo_contador`, views `v_contatos_por_cidade`, `v_ranking_cadastradores`. Schema não verificável pelo repo. |
 | 2 | Auth + convites + trigger | ✅ Completo | `Entrar.tsx`, `CriarCampanha.tsx` (signUp com `workspace_nome`), `Convite.tsx`, `RedefinirSenha.tsx`, `CampoSenha.tsx`. Validado em produção. |
 | 3 | Cadastro offline Dexie | ✅ Completo | `lib/db.ts`: store `fila`, `sincronizar()`, `pendentes()`, `salvarContactTags()`. `NovoContato.tsx`: offline badge, sync manual. **Bug de tags corrigido** em commit `5f5c428` (2026-06-15) — `sincronizar()` agora salva tags em `contact_tags` após sync. Ver `docs/BUGS_RESOLVIDOS.md#BUG-01`. |
 | 4 | Gestão completa de contatos | ✅ Completo | `Contatos.tsx` (271 linhas), `DetalheContato.tsx` (editar/arquivar/excluir/anonimizar). Commit `70a6e1d` (2026-06-16). `DetalheContato.tsx` escreve em `audit_logs` nas ações destrutivas. |
@@ -20,7 +20,7 @@
 | 7 | WhatsApp assistido + listas transmissão | ✅ Completo | `Envio.tsx` (397 linhas): modo normal + opt-in + lista, templates `{nome}/{regiao}`, mídia via Storage, Web Share + fallback. `EnvioLista.tsx`: lista de transmissão. `send_logs` escritos. |
 | 8 | Agenda FullCalendar + Realtime + Push | 🟡 Parcial | `Agenda.tsx` (196 linhas): FullCalendar (daygrid + list + interaction), Supabase Realtime via `supabase.channel()`, Notifications API para push. **Google Calendar:** botão "em breve" presente, OAuth não implementado. |
 | 9 | Dashboard | ✅ Completo | `Inicio.tsx` reescrito com Recharts. Filtros globais (período 7d/30d/90d/12m, cidade, origem). KPIs com delta vs período anterior + seta de variação. 4 gráficos: EvolucaoContatos (LineChart), FunilCampanha (BarChart horizontal), DistribuicaoOrigem (PieChart rosca), TopBairros (BarChart vertical toggle 10/20). PDF export via html2canvas+jsPDF. Audit logs: consulta_dashboard, exportar_dashboard_pdf. Commits `64add2b` + `dff2348`. |
-| 10 | Mapa de calor Leaflet | ✅ Completo | `src/pages/MapaCalor.tsx` + react-leaflet v5 + leaflet.heat. Geocodificação via Nominatim com cache em localStorage (1 req/s). Toggle calor/pontos. Filtros: consentimento, origem. Painel de estatísticas: top 5 bairros (clicáveis → flyTo), top 5 cidades, % sem localização. Botão "Mapa" no header (admin/coord). Commit `1f4a50c`. |
+| 10 | Mapa de calor Leaflet | 🔴 DESATIVADO | Código existe em `src/pages/MapaCalor.tsx` (código morto, não excluído). Botão "Mapa" removido do header. Ver BUG-07 em `docs/BUGS_RESOLVIDOS.md`. **Decisão estratégica de Eduardo (2026-06-21):** feature não-core. Retomar como V2.0 com biblioteca alternativa (avaliar Mapbox GL JS ou Google Maps) ou refatoração de Leaflet em sessão dedicada. |
 | 11 | WhatsApp Business API (campanhas) | 🟡 Código pronto, deploy pendente | Ver `docs/AUDITORIA_ETAPA_11.md` para detalhes completos. |
 
 ---
@@ -34,11 +34,11 @@
 - **Workaround:** deploy manual via Dashboard (arquivos standalone em `supabase/functions-standalone/`)
 - **Resolução:** aguardando ticket de suporte Supabase
 
-### ~~Migrations SQL não versionadas~~ ✅ RESOLVIDO (2026-06-19)
-- 8 migrations criadas em `supabase/migrations/` — schema versionado no repositório
-- Ver `docs/SCHEMA.md` para referência de tabelas/RPCs/views
-- Ver `docs/SETUP_NOVO_PROJETO.md` para guia de setup do zero
-- Campos marcados `-- TODO` ainda precisam de confirmação no Supabase Dashboard
+### Migrations SQL não versionadas
+- Todo o schema existe apenas no banco de produção
+- Não há `supabase/migrations/` no repositório
+- Risco: qualquer reset de projeto ou auditoria de RLS requer acesso ao Dashboard
+- Solução: `supabase db dump --schema public > supabase/schema.sql` + versionamento
 
 ### Google OAuth (dois lugares)
 - **Importação de Contatos (Etapa 5):** `supabase.auth.signInWithOAuth` com scope Google Contacts — requer provider Google habilitado no Supabase Dashboard

@@ -110,25 +110,13 @@ src/
     └── CampoSenha.tsx       input senha com olhinho
 
 supabase/
-├── migrations/              Schema versionado (8 arquivos SQL)
-│   ├── 001_inicial_auth_workspaces.sql
-│   ├── 002_contatos_base.sql
-│   ├── 003_audit_logs.sql
-│   ├── 004_envio_whatsapp_assistido.sql
-│   ├── 005_agenda.sql
-│   ├── 006_dashboard_views.sql
-│   ├── 007_storage_campanha.sql
-│   └── 008_whatsapp_api.sql
 ├── functions/               Edge Functions (versão com _shared/)
 └── functions-standalone/    Edge Functions self-contained (deploy Dashboard)
 
 docs/
 ├── ROADMAP.md               estado de todas as etapas
-├── SCHEMA.md                referência de tabelas, RPCs e views
-├── SETUP_NOVO_PROJETO.md    guia passo-a-passo para novo projeto
 ├── AUDITORIA_ETAPA_11.md    auditoria completa da Etapa 11
 ├── BACKLOG.md               dívidas técnicas com severidade e esforço
-├── BUGS_RESOLVIDOS.md       histórico de bugs corrigidos
 └── EDGE_FUNCTIONS_DEPLOY.md  guia de deploy das funções
 ```
 
@@ -140,13 +128,6 @@ docs/
 | `coordenador` | Templates, campanhas, importação, ver todos os contatos |
 | `assessor` | Cadastrar e ver contatos |
 | `voluntario` | Cadastrar contatos |
-
-## Banco de dados
-
-Schema versionado em `supabase/migrations/` (8 arquivos SQL). Extraído do código em 2026-06-19.
-
-- [`docs/SCHEMA.md`](docs/SCHEMA.md) — referência completa de tabelas, RPCs, views e políticas RLS
-- [`docs/SETUP_NOVO_PROJETO.md`](docs/SETUP_NOVO_PROJETO.md) — guia passo-a-passo para novo projeto Supabase + Vercel
 
 ## Roadmap e estado atual
 

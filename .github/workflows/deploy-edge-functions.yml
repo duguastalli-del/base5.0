@@ -17,40 +17,90 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinado em v2.47.1 para evitar regressão do v2.106.0
+          version: 2.47.1
 
+      # ── Diagnóstico: formato do token + listagem de projetos + teste direto ──
+      - name: Diagnóstico — verificar token e projeto
+        run: |
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
+
+          echo "=== 1. Comprimento dos segredos ==="
+          echo "SUPABASE_PROJECT_ID length : ${#PROJECT_ID}  (esperado: 20)"
+          echo "SUPABASE_ACCESS_TOKEN length: ${#SUPABASE_ACCESS_TOKEN}  (esperado: 64+)"
+
+          echo ""
+          echo "=== 2. Formato do token ==="
+          TOKEN_PREFIX="${SUPABASE_ACCESS_TOKEN:0:4}"
+          if [ "$TOKEN_PREFIX" = "sbp_" ]; then
+            echo "Formato: PAT correto (começa com sbp_) ✓"
+          elif [ "$TOKEN_PREFIX" = "eyJh" ] || [ "$TOKEN_PREFIX" = "eyJ0" ]; then
+            echo "ERRO: Token parece ser um JWT (service_role ou anon key), NÃO um Personal Access Token."
+            echo "Gere o token em: supabase.com → avatar → Account → Access Tokens → Generate new token"
+          else
+            echo "Prefixo dos primeiros 4 chars: '$TOKEN_PREFIX'"
+            echo "Token não segue o formato esperado (sbp_...). Pode estar truncado ou incorreto."
+          fi
+
+          echo ""
+          echo "=== 3. Projetos acessíveis com este token ==="
+          curl -s \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects" \
+            | jq -r 'if type == "array" then "Total de projetos: \(length)", (.[] | "  - id: \(.id)  name: \(.name)  region: \(.region)") else "Resposta inesperada: \(tostring | .[0:300])" end'
+
+          echo ""
+          echo "=== 4. Teste direto no projeto específico ==="
+          HTTP=$(curl -s -o /tmp/api_resp.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_ID")
+          echo "HTTP Status para project/$PROJECT_ID: $HTTP"
+          cat /tmp/api_resp.json
+          echo ""
+
+          if [ "$HTTP" != "200" ]; then
+            echo "ERRO: verifique os itens acima para identificar o problema."
+            exit 1
+          fi
+
+      # ── Deploy todas as funções ──────────────────────────────────────────────
       - name: Deploy todas as Edge Functions
         if: ${{ github.event.inputs.function == '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
+
           supabase functions deploy whatsapp-testar-conexao \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-submeter-template \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-enviar-disparo \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+            --project-ref "$PROJECT_ID"
 
           supabase functions deploy whatsapp-webhook \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --project-ref "$PROJECT_ID" \
             --no-verify-jwt
 
+      # ── Deploy função específica ──────────────────────────────────────────────
       - name: Deploy função específica
         if: ${{ github.event.inputs.function != '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_PROJECT_ID }}" | tr -d '[:space:]')
+
           EXTRA_FLAGS=""
           if [ "${{ github.event.inputs.function }}" = "whatsapp-webhook" ]; then
             EXTRA_FLAGS="--no-verify-jwt"
           fi
-          supabase functions deploy ${{ github.event.inputs.function }} \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+
+          supabase functions deploy "${{ github.event.inputs.function }}" \
+            --project-ref "$PROJECT_ID" \
             $EXTRA_FLAGS

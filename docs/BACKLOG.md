@@ -7,14 +7,15 @@
 
 ## Dívidas da Etapa 11 (WhatsApp Business API)
 
-### ~~DT-01 — Migrations SQL não versionadas~~ ✅ RESOLVIDO (2026-06-19)
+### DT-01 — Migrations SQL não versionadas
 
 | Campo | Detalhe |
 |-------|---------|
-| **Severidade** | ~~Alta~~ → **Resolvido** |
-| **Descrição** | ~~Nenhum arquivo `.sql` no repositório. Todo o schema (tabelas, RLS, triggers, funções, views) existe só no banco de produção. Impossível auditar, reproduzir ou reverter.~~ |
-| **Solução aplicada** | 8 arquivos de migration criados em `supabase/migrations/` — extraídos por leitura de código. Schema documentado em `docs/SCHEMA.md`. Guia de setup em `docs/SETUP_NOVO_PROJETO.md`. |
-| **Observação** | Os arquivos foram inferidos do código TypeScript (sem acesso direto ao Supabase Dashboard). Campos marcados `-- TODO: confirmar` devem ser validados antes de usar em novo projeto. |
+| **Severidade** | Alta |
+| **Descrição** | Nenhum arquivo `.sql` no repositório. Todo o schema (tabelas, RLS, triggers, funções, views) existe só no banco de produção. Impossível auditar, reproduzir ou reverter. |
+| **Solução proposta** | `supabase db dump --schema public > supabase/schema.sql` e versionamento. Ou usar `supabase migrations` para declarar o estado atual como migration inicial. |
+| **Esforço estimado** | 1–2h |
+| **Bloqueia campanha?** | Não — banco existe e funciona. Bloqueia auditoria e portabilidade. |
 
 ---
 
