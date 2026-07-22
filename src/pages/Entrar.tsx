@@ -12,6 +12,9 @@ export default function Entrar() {
   const [aviso, setAviso] = useState("");
   const [carregando, setCarregando] = useState(false);
 
+  const erroRede = (msg: string) =>
+    /load failed|failed to fetch|networkerror|network request failed/i.test(msg);
+
   const entrar = async () => {
     setErro(""); setAviso(""); setCarregando(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
@@ -21,6 +24,8 @@ export default function Entrar() {
       return setErro('Sua conta existe, mas o e-mail ainda não foi confirmado. Abra o link "Confirm your signup" que chegou no seu e-mail (verifique também o spam).');
     if (error.code === "invalid_credentials")
       return setErro("E-mail ou senha incorretos.");
+    if (erroRede(error.message))
+      return setErro("Sem conexão com o servidor. Verifique sua internet e tente novamente. Se o problema persistir, o serviço pode estar em manutenção.");
     setErro("Falha ao entrar: " + error.message);
   };
 
@@ -30,8 +35,10 @@ export default function Entrar() {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/redefinir`,
     });
-    if (error) return setErro("Não foi possível enviar o link: " + error.message);
-    setAviso("Se este e-mail tiver conta, você receberá um link para criar uma nova senha. Verifique também o spam.");
+    if (!error) return setAviso("Se este e-mail tiver conta, você receberá um link para criar uma nova senha. Verifique também o spam.");
+    if (erroRede(error.message))
+      return setErro("Sem conexão com o servidor. Verifique sua internet e tente novamente.");
+    setErro("Não foi possível enviar o link: " + error.message);
   };
 
   return (
