@@ -120,20 +120,29 @@ export default function App() {
   const [hasSettings, setHasSettings] = useState<boolean | undefined>(undefined);
 
   const verificarSettings = async (p: Perfil) => {
-    const { data } = await supabase
-      .from("workspace_settings")
-      .select("workspace_id")
-      .eq("workspace_id", p.workspace_id)
-      .single();
-    setHasSettings(data !== null);
+    try {
+      const { data } = await supabase
+        .from("workspace_settings")
+        .select("workspace_id")
+        .eq("workspace_id", p.workspace_id)
+        .single();
+      setHasSettings(data !== null);
+    } catch {
+      setHasSettings(false);
+    }
   };
 
   const carregarPerfil = async () => {
-    const p = await meuPerfil();
-    setPerfil(p);
-    if (p) {
-      await verificarSettings(p);
-    } else {
+    try {
+      const p = await meuPerfil();
+      setPerfil(p);
+      if (p) {
+        await verificarSettings(p);
+      } else {
+        setHasSettings(undefined);
+      }
+    } catch {
+      setPerfil(null);
       setHasSettings(undefined);
     }
   };
