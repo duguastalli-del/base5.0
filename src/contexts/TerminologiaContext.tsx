@@ -38,12 +38,13 @@ export function TerminologiaProvider({ perfil, children }: { perfil: Perfil | nu
       return;
     }
 
-    supabase
-      .from("workspace_settings")
-      .select("vertical, vocabulario")
-      .eq("workspace_id", key)
-      .single()
-      .then(({ data }) => {
+    const buscar = async () => {
+      try {
+        const { data } = await supabase
+          .from("workspace_settings")
+          .select("vertical, vocabulario")
+          .eq("workspace_id", key)
+          .single();
         const settings = data as WsSettings | null;
         const vertical: Vertical = settings?.vertical ?? "politica";
         const base = TERMOS_PADRAO[vertical];
@@ -55,7 +56,11 @@ export function TerminologiaProvider({ perfil, children }: { perfil: Perfil | nu
         };
         cache.set(key, novo);
         setCtx(novo);
-      });
+      } catch {
+        setCtx(fallback);
+      }
+    };
+    buscar();
   }, [perfil?.workspace_id]);
 
   return (
